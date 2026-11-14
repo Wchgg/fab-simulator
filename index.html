@@ -1,0 +1,1239 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:,">
+<title>晶圆厂模拟器 · 工艺整合培训</title>
+<style>
+:root{
+  --bg:#eef1f3; --panel:#ffffff; --panel2:#f6f8f9; --ink:#17242b; --mut:#5b6d75; --line:#d7dee1;
+  --teal:#0e7c86; --teal-d:#0a5c64; --amber:#e8a013; --amber-bg:#fdf3d7; --red:#d64541; --red-bg:#fdeceb;
+  --green:#1e9e62; --green-bg:#e6f6ee; --blue:#2563eb; --chip:#e8eef0;
+  --shadow:0 2px 10px rgba(20,40,50,.08); --r:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0d1518; --panel:#162126; --panel2:#1b292f; --ink:#e7eef0; --mut:#9db2ba; --line:#2b3d44;
+    --teal:#2fb3bf; --teal-d:#7fd6dd; --amber:#f2b93b; --amber-bg:#3a2f10; --red:#ff7a72; --red-bg:#3d1d1b;
+    --green:#3fce8a; --green-bg:#123324; --chip:#22333a; --shadow:0 2px 10px rgba(0,0,0,.35); }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;font-size:15px;line-height:1.55}
+button,[role="button"],select,input{min-height:2.25rem}
+button{font:inherit;cursor:pointer}
+h1,h2,h3{margin:0;line-height:1.3}
+.wrap{max-width:1060px;margin:0 auto;padding:0 14px 90px}
+/* header */
+header.top{position:sticky;top:0;z-index:40;background:var(--panel);border-bottom:1px solid var(--line)}
+.top-in{max-width:1060px;margin:0 auto;padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;min-width:0}
+.logo svg{flex:none}
+.logo .t1{font-size:17px;font-weight:800;letter-spacing:.02em}
+.logo .t2{font-size:11px;color:var(--mut)}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.score-chip{background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-weight:700;font-size:13px}
+.score-chip b{color:var(--teal-d);font-size:15px}
+.langbtn{border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:5px 14px;font-weight:700}
+/* tabs */
+nav.tabs{padding:10px 0 4px}
+.tabs-in{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.tabs-in::-webkit-scrollbar{display:none}
+.tab{flex:none;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:8px 16px;font-weight:700;min-height:2.5rem}
+.tab.on{background:var(--teal);border-color:var(--teal);color:#fff}
+.tab .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red);margin-left:5px;vertical-align:middle}
+/* cards */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:16px;margin:12px 0}
+.card h2{font-size:17px;margin-bottom:4px}
+.card h3{font-size:15px;margin-bottom:4px}
+.sub{color:var(--mut);font-size:13px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;box-shadow:var(--shadow)}
+.kpi .v{font-size:22px;font-weight:800;color:var(--teal-d)}
+.kpi .l{font-size:12px;color:var(--mut)}
+@media(max-width:640px){.kpis{grid-template-columns:repeat(2,1fr)}}
+/* fab svg */
+.fabbox{background:linear-gradient(180deg,#dfe7ea,#cfd9dd);border-radius:12px;border:1px solid var(--line);overflow:hidden}
+@media (prefers-color-scheme: dark){.fabbox{background:linear-gradient(180deg,#1c2b31,#141f24)}}
+.fabbox svg{display:block;width:100%;height:auto}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mut);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+/* products */
+.pfilter{display:flex;gap:8px;margin:10px 0}
+.pfilter button{border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:6px 14px;font-weight:700}
+.pfilter button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:820px){.pgrid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.pgrid{grid-template-columns:1fr 1fr;gap:8px}}
+.pcard{text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:12px;box-shadow:var(--shadow);width:100%}
+.pcard.sel{outline:2px solid var(--teal);outline-offset:-2px;background:var(--panel2)}
+.pcard .code{font-size:11px;color:var(--mut);letter-spacing:.04em}
+.pcard .nm{font-weight:800;font-size:15px;margin:2px 0}
+.pcard .ds{font-size:12px;color:var(--mut);min-height:2.4em}
+.pcard .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.tag{font-size:11px;background:var(--chip);border-radius:999px;padding:2px 8px;font-weight:600}
+.tag.hot{background:var(--amber-bg);color:#8a6103}
+@media (prefers-color-scheme: dark){.tag.hot{color:var(--amber)}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:10px;padding:10px 20px;font-weight:800;background:var(--teal);color:#fff;min-height:2.75rem}
+.btn:hover{background:var(--teal-d)}
+.btn.ghost{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+.btn.warn{background:var(--amber);color:#231a00}
+.btn.danger{background:var(--red);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.big{width:100%;font-size:16px;padding:13px}
+/* run layout */
+.rungrid{display:grid;grid-template-columns:1.5fr 1fr;gap:12px;align-items:start}
+@media(max-width:820px){.rungrid{grid-template-columns:1fr}}
+.mes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mes .cell{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.mes .cell .l{font-size:11px;color:var(--mut)}
+.mes .cell .v{font-weight:800;font-size:15px}
+.mes .cell.wide{grid-column:1/-1}
+.flowbar{display:flex;align-items:center;gap:0;margin:14px 0 4px}
+.flowbar .seg{flex:1;text-align:center;font-size:12px;font-weight:700;color:var(--mut);position:relative;padding-top:16px}
+.flowbar .seg::before{content:"";position:absolute;top:4px;left:0;right:0;height:6px;background:var(--chip);border-radius:3px}
+.flowbar .seg.done{color:var(--teal-d)}
+.flowbar .seg.done::before{background:var(--teal)}
+.flowbar .seg.now{color:var(--amber)}
+.flowbar .seg.now::before{background:var(--amber)}
+progress{width:100%;height:12px;appearance:none}
+progress::-webkit-progress-bar{background:var(--chip);border-radius:6px}
+progress::-webkit-progress-value{background:var(--teal);border-radius:6px}
+progress::-moz-progress-bar{background:var(--teal);border-radius:6px}
+.ctl{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.ctl button{border:1px solid var(--line);background:var(--panel2);border-radius:9px;padding:7px 14px;font-weight:700}
+.ctl button.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+.switch{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13px;padding:6px 4px;min-height:2.25rem;cursor:pointer}
+.switch input{width:20px;height:20px;accent-color:var(--teal)}
+/* station anim stage */
+.stage{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.stage svg{max-width:340px;width:100%;height:auto}
+.principle{background:var(--amber-bg);border-radius:10px;padding:10px 12px;font-size:13.5px;margin-top:10px}
+.principle b{color:#8a6103}
+@media (prefers-color-scheme: dark){.principle b{color:var(--amber)}}
+/* cross-section */
+.xsec{display:flex;flex-direction:column-reverse;gap:2px;margin-top:8px}
+.xlayer{border-radius:5px;padding:4px 10px;font-size:12px;font-weight:700;color:#fff;display:flex;justify-content:space-between;animation:grow .5s ease}
+@keyframes grow{from{transform:scaleX(.6);opacity:0}to{transform:scaleX(1);opacity:1}}
+.xlayer small{font-weight:400;opacity:.85}
+.log{background:#101c20;color:#bfe3e8;border-radius:10px;padding:10px 12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;height:150px;overflow-y:auto;line-height:1.7}
+.log .warn{color:#ffd166}.log .bad{color:#ff8a80}.log .ok{color:#7be3a8}
+/* dashboard */
+.loadrow{display:grid;grid-template-columns:86px 1fr 52px;gap:10px;align-items:center;margin:9px 0;font-size:13px}
+.loadbar{height:14px;background:var(--chip);border-radius:7px;overflow:hidden}
+.loadbar i{display:block;height:100%;border-radius:7px;background:var(--teal);transition:width .6s ease}
+.loadbar i.hot{background:var(--red)}
+.loadbar i.mid{background:var(--amber)}
+.loadrow button{grid-column:1/-1}
+.stationpick{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.stationpick button{border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:7px 14px;font-weight:700}
+.stationpick button.sel{background:var(--amber);border-color:var(--amber);color:#231a00}
+.feedback{border-radius:10px;padding:10px 12px;font-size:13.5px;margin-top:10px;display:none}
+.feedback.show{display:block}
+.feedback.good{background:var(--green-bg);border:1px solid var(--green)}
+.feedback.bad{background:var(--red-bg);border:1px solid var(--red)}
+/* tour */
+.tourgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:820px){.tourgrid{grid-template-columns:1fr}}
+.tourcard{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel);box-shadow:var(--shadow)}
+.tourcard .body{padding:12px}
+.tourcard svg{display:block;width:100%;height:auto}
+/* quiz */
+.q{border:1px solid var(--line);border-radius:12px;padding:14px;margin:10px 0;background:var(--panel)}
+.q .qt{font-weight:800;margin-bottom:8px}
+.q .opts{display:grid;gap:8px}
+.q .opts button{text-align:left;border:1px solid var(--line);background:var(--panel2);border-radius:9px;padding:10px 12px;font-weight:600;min-height:2.75rem}
+.q .opts button.right{background:var(--green-bg);border-color:var(--green)}
+.q .opts button.wrong{background:var(--red-bg);border-color:var(--red)}
+.q .opts button:disabled{cursor:default;opacity:.9}
+.q .exp{font-size:13px;color:var(--mut);margin-top:8px;display:none}
+.q .exp.show{display:block}
+/* result */
+.bigscore{font-size:56px;font-weight:900;color:var(--teal-d);line-height:1;text-align:center}
+.scoregrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center;margin:14px 0}
+.scoregrid .cell{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px}
+.scoregrid .v{font-size:24px;font-weight:800}
+.scoregrid .l{font-size:12px;color:var(--mut)}
+/* phone modal */
+.overlay{position:fixed;inset:0;background:rgba(8,15,18,.62);z-index:100;display:none;align-items:flex-end;justify-content:center;padding:0}
+.overlay.show{display:flex}
+@media(min-width:640px){.overlay{align-items:center;padding:20px}}
+.phone{width:100%;max-width:390px;max-height:92vh;overflow-y:auto;background:#10181c;color:#eef6f7;border-radius:26px 26px 0 0;padding:22px 20px 26px;box-shadow:0 -8px 40px rgba(0,0,0,.4);animation:up .3s ease}
+@media(min-width:640px){.phone{border-radius:26px}}
+@keyframes up{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+.phone .ring{text-align:center}
+.avatar{width:74px;height:74px;border-radius:50%;margin:6px auto 10px;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;color:#fff}
+.avatar.ee{background:#b96a00}.avatar.pe{background:#0e7c86}.avatar.mg{background:#5b4bc4}.avatar.xx{background:#66777f}
+.phone .who{font-size:20px;font-weight:800;text-align:center}
+.phone .stat{text-align:center;color:#9fc0c7;font-size:13px;margin:2px 0 14px}
+.vibe{animation:vibe .4s infinite}
+@keyframes vibe{0%,100%{transform:rotate(0deg)}25%{transform:rotate(-4deg)}75%{transform:rotate(4deg)}}
+.pulse{animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(34,181,115,.55)}50%{box-shadow:0 0 0 14px rgba(34,181,115,0)}}
+.callbtns{display:flex;justify-content:space-around;margin-top:16px}
+.callbtns button{width:64px;height:64px;border-radius:50%;border:none;font-size:24px;color:#fff}
+.callbtns .acc{background:#22b573}.callbtns .dec{background:#e5484d}
+.callmsg{background:#1b2a30;border-radius:12px;padding:12px 14px;font-size:14.5px;line-height:1.6;display:none}
+.callmsg.show{display:block}
+.decs{display:grid;gap:9px;margin-top:14px}
+.decs button{text-align:left;background:#22353d;color:#eef6f7;border:1px solid #35505a;border-radius:11px;padding:12px 14px;font-weight:700;min-height:3rem}
+.decs button:active{background:#2c454f}
+.callfb{border-radius:11px;padding:11px 13px;font-size:14px;margin-top:12px;display:none}
+.callfb.show{display:block}
+.callfb.good{background:#123c2a;border:1px solid #22b573}
+.callfb.bad{background:#42201e;border:1px solid #e5484d}
+.callfb.mid{background:#3d3413;border:1px solid #e8a013}
+/* boom */
+.boomstage{position:relative;height:300px;border-radius:12px;overflow:hidden;background:linear-gradient(180deg,#2b3a41,#182227)}
+.boomstage .p{position:absolute;border-radius:50%;opacity:0}
+.boomstage.go .p{animation:pop 1.6s ease-out forwards}
+@keyframes pop{0%{transform:translate(0,0) scale(.4);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(1.6);opacity:0}}
+.boomflash{position:absolute;inset:0;background:radial-gradient(circle at 50% 60%,#fff6c9,#ffb03a 45%,rgba(255,90,0,0) 72%);opacity:0}
+.boomstage.go .boomflash{animation:flash 1s ease-out forwards}
+@keyframes flash{0%{opacity:0}12%{opacity:1}100%{opacity:0}}
+/* learn */
+.lmodes{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.lmodes button{border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:7px 16px;font-weight:700}
+.lmodes button.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+.lprog{height:12px;background:var(--chip);border-radius:6px;overflow:hidden;margin:8px 0 4px}
+.lprog i{display:block;height:100%;background:var(--teal);transition:width .5s}
+.lgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:820px){.lgrid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.lgrid{grid-template-columns:1fr 1fr;gap:8px}}
+.lcard{text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:12px;box-shadow:var(--shadow);width:100%}
+.lcard .no{font-size:11px;color:var(--mut);font-weight:700}
+.lcard .nm{font-weight:800;font-size:15px;margin:2px 0}
+.lcard .ds{font-size:12px;color:var(--mut);min-height:2.6em}
+.lcard .done-badge{font-size:11px;background:var(--green-bg);color:var(--green);border-radius:999px;padding:2px 8px;font-weight:700}
+.lcat{font-size:13px;font-weight:800;color:var(--teal-d);margin:16px 0 4px}
+details.lsec{border:1px solid var(--line);border-radius:10px;margin:8px 0;background:var(--panel)}
+details.lsec summary{cursor:pointer;font-weight:800;padding:11px 14px;min-height:2.75rem;display:flex;align-items:center}
+details.lsec .in{padding:0 14px 12px;font-size:14px}
+details.lsec ul{margin:6px 0;padding-left:20px}
+details.lsec li{margin:4px 0}
+.ptable{width:100%;border-collapse:collapse;font-size:13.5px}
+.ptable td{border-top:1px solid var(--line);padding:7px 6px;vertical-align:top}
+.ptable td:first-child{font-weight:700;white-space:nowrap;width:34%}
+.stepper{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.stepper button{border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:6px 13px;font-weight:700}
+.stepper button.on{background:var(--amber);border-color:var(--amber);color:#231a00}
+.stepdesc{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;min-height:3.2em}
+.xcompare{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:560px){.xcompare{grid-template-columns:1fr}}
+.xcol{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px}
+.xcol .cap{font-size:12px;font-weight:800;color:var(--mut);margin-bottom:6px}
+.io2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:560px){.io2{grid-template-columns:1fr}}
+.io2 .cell{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px}
+.io2 .cell b{display:block;margin-bottom:3px}
+.relchain{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;margin:8px 0}
+.relchain .node{background:var(--chip);border-radius:8px;padding:5px 10px;font-weight:700}
+.relchain .arr{color:var(--mut)}
+.tipbox{background:var(--amber-bg);border-radius:10px;padding:11px 13px;font-size:14px;margin:8px 0}
+.stlearn{margin-top:10px;border-top:1px dashed var(--line);padding-top:10px;font-size:13.5px}
+.stlearn ul{margin:5px 0;padding-left:19px}
+.footnote{font-size:11.5px;color:var(--mut);text-align:center;margin:22px 0 0}
+.hidden{display:none!important}
+.view{display:none}.view.on{display:block}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(80px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:700;font-size:13.5px;z-index:200;transition:transform .3s;max-width:92vw;text-align:center}
+.toast.show{transform:translateX(-50%)}
+@media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="logo">
+      <svg width="34" height="34" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="none" stroke="#0e7c86" stroke-width="2.5"/><circle cx="20" cy="20" r="4" fill="#e8a013"/><g stroke="#0e7c86" stroke-width="1.6"><path d="M20 3v8M20 29v8M3 20h8M29 20h8M8 8l5.5 5.5M32 8l-5.5 5.5M8 32l5.5-5.5M32 32l-5.5-5.5"/></g></svg>
+      <div>
+        <div class="t1" data-i="title">晶圆厂模拟器</div>
+        <div class="t2" data-i="subtitle">工艺整合培训 · 跟着一个批次跑完每一站</div>
+      </div>
+    </div>
+    <div class="top-right">
+      <span class="score-chip"><span data-i="runscore">运行分</span> <b id="scoreChip">80</b></span>
+      <button class="langbtn" id="langBtn" aria-label="Language">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav class="tabs" aria-label="主导航">
+    <div class="tabs-in" id="tabs">
+      <button class="tab on" data-view="overview" data-i="tab_overview">🏭 总览 · 选产品</button>
+      <button class="tab" data-view="run" data-i="tab_run">▶ 跟批运行<span class="dot hidden" id="runDot"></span></button>
+      <button class="tab" data-view="learn">📚 工艺学习<span class="dot hidden" id="learnDot"></span></button>
+      <button class="tab" data-view="dash" data-i="tab_dash">📊 数据大屏</button>
+      <button class="tab" data-view="tour" data-i="tab_tour">🚶 进厂看看</button>
+      <button class="tab" data-view="quiz" data-i="tab_quiz">📝 测验结算</button>
+    </div>
+  </nav>
+
+  <!-- ============ OVERVIEW ============ -->
+  <section class="view on" id="view-overview">
+    <div class="card" style="margin-top:6px">
+      <h2 data-i="ov_h">俯瞰整座晶圆厂</h2>
+      <p class="sub" data-i="ov_sub">无尘室里一排排机台按工艺分区排布，AMHS 天车沿着轨道把装着晶圆的 FOUP 送到每一站。黄色的是黄光区（光刻），最怕光、也最贵。</p>
+      <div class="fabbox" style="margin-top:10px">
+        <svg viewBox="0 0 800 430" role="img" aria-label="晶圆厂平面俯瞰图">
+          <rect x="0" y="0" width="800" height="430" fill="#c9d4d8"/>
+          <rect x="18" y="52" width="764" height="330" rx="10" fill="#e8edef" stroke="#9fb2b9" stroke-width="2"/>
+          <!-- AMHS rails -->
+          <g stroke="#7d939c" stroke-width="3" fill="none" opacity=".8">
+            <path d="M30 92 H770 M30 200 H770 M30 308 H770 M140 60 V375 M400 60 V375 M660 60 V375"/>
+          </g>
+          <g fill="#41565e"><rect x="180" y="86" width="34" height="12" rx="3"/><rect x="470" y="194" width="34" height="12" rx="3"/><rect x="600" y="302" width="34" height="12" rx="3"/><rect x="330" y="302" width="34" height="12" rx="3"/></g>
+          <!-- bays -->
+          <g font-family="inherit">
+            <g><rect x="36" y="108" width="220" height="76" rx="6" fill="#bcd8dc" stroke="#7fa8ad"/><text x="52" y="132" font-size="15" font-weight="700" fill="#134e54">薄膜 / 沉积区</text><g fill="#5f8a90"><rect x="52" y="146" width="34" height="22" rx="3"/><rect x="94" y="146" width="34" height="22" rx="3"/><rect x="136" y="146" width="34" height="22" rx="3"/><rect x="178" y="146" width="34" height="22" rx="3"/></g></g>
+            <g><rect x="290" y="108" width="220" height="76" rx="6" fill="#f3d67b" stroke="#c9a437"/><text x="306" y="132" font-size="15" font-weight="700" fill="#6b5205">黄光区 · 光刻</text><g fill="#c2a13d"><rect x="306" y="146" width="40" height="22" rx="3"/><rect x="354" y="146" width="40" height="22" rx="3"/><rect x="402" y="146" width="40" height="22" rx="3"/><rect x="450" y="146" width="40" height="22" rx="3"/></g></g>
+            <g><rect x="544" y="108" width="220" height="76" rx="6" fill="#c3d4ea" stroke="#84a3c9"/><text x="560" y="132" font-size="15" font-weight="700" fill="#274b73">蚀刻区</text><g fill="#7593ba"><rect x="560" y="146" width="34" height="22" rx="3"/><rect x="602" y="146" width="34" height="22" rx="3"/><rect x="644" y="146" width="34" height="22" rx="3"/><rect x="686" y="146" width="34" height="22" rx="3"/></g></g>
+            <g><rect x="36" y="216" width="220" height="76" rx="6" fill="#d9c8ec" stroke="#a58cc9"/><text x="52" y="240" font-size="15" font-weight="700" fill="#4a3573">扩散 / 注入区</text><g fill="#9a7fc0"><rect x="52" y="254" width="34" height="22" rx="3"/><rect x="94" y="254" width="34" height="22" rx="3"/><rect x="136" y="254" width="34" height="22" rx="3"/><rect x="178" y="254" width="34" height="22" rx="3"/></g></g>
+            <g><rect x="290" y="216" width="220" height="76" rx="6" fill="#cfe6cf" stroke="#8ab88a"/><text x="306" y="240" font-size="15" font-weight="700" fill="#265c26">CMP / 清洗区</text><g fill="#74a874"><rect x="306" y="254" width="34" height="22" rx="3"/><rect x="348" y="254" width="34" height="22" rx="3"/><rect x="390" y="254" width="34" height="22" rx="3"/><rect x="432" y="254" width="34" height="22" rx="3"/></g></g>
+            <g><rect x="544" y="216" width="220" height="76" rx="6" fill="#f0d3c0" stroke="#c99b78"/><text x="560" y="240" font-size="15" font-weight="700" fill="#714325">量测 / 检测区</text><g fill="#bd8a63"><rect x="560" y="254" width="34" height="22" rx="3"/><rect x="602" y="254" width="34" height="22" rx="3"/><rect x="644" y="254" width="34" height="22" rx="3"/><rect x="686" y="254" width="34" height="22" rx="3"/></g></g>
+            <rect x="36" y="322" width="728" height="44" rx="6" fill="#d5dde0" stroke="#9fb2b9"/>
+            <text x="52" y="350" font-size="14" font-weight="700" fill="#3c5158">后段：封装 · 测试 · 成品入库</text>
+            <text x="748" y="350" font-size="13" fill="#5b6d75" text-anchor="end">OSAT → Warehouse</text>
+          </g>
+          <circle id="ovLot" r="9" fill="#d64541" stroke="#fff" stroke-width="2.5">
+            <animateMotion dur="14s" repeatCount="indefinite" path="M60 92 H740 V200 H60 V308 H740"/>
+          </circle>
+          <text x="18" y="30" font-size="16" font-weight="800" fill="#33474f">FAB 12 寸厂 · 平面总览</text><text x="782" y="30" font-size="13" fill="#a02c28" text-anchor="end">● 红点 = 在跑的批次</text>
+        </svg>
+      </div>
+      <div class="legend">
+        <span><i style="background:#f3d67b"></i><span data-i="lg_litho">黄光区（光刻）</span></span>
+        <span><i style="background:#bcd8dc"></i><span data-i="lg_dep">沉积</span></span>
+        <span><i style="background:#c3d4ea"></i><span data-i="lg_etch">蚀刻</span></span>
+        <span><i style="background:#d9c8ec"></i><span data-i="lg_diff">扩散/注入</span></span>
+        <span><i style="background:#cfe6cf"></i>CMP</span>
+        <span><i style="background:#f0d3c0"></i><span data-i="lg_met">量测</span></span>
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="v">52,000</div><div class="l" data-i="kpi_cap">月产能（片/月，12寸）</div></div>
+      <div class="kpi"><div class="v">38,600</div><div class="l" data-i="kpi_wip">在制品 WIP（片）</div></div>
+      <div class="kpi"><div class="v">62 <span style="font-size:13px" data-i="day">天</span></div><div class="l" data-i="kpi_ct">平均生产周期</div></div>
+      <div class="kpi"><div class="v">91.4%</div><div class="l" data-i="kpi_yield">综合良率（示意）</div></div>
+    </div>
+
+    <div class="card">
+      <h2 data-i="pick_h">选择产品，开始模拟</h2>
+      <p class="sub" data-i="pick_sub">第一次玩，建议从短流程开始：步数少、跑得快，先把每一站看明白，再挑战上千步的先进制程。</p>
+      <div class="pfilter" role="group" aria-label="产品分类">
+        <button class="on" data-f="all" data-i="f_all">全部</button>
+        <button data-f="logic" data-i="f_logic">逻辑制程</button>
+        <button data-f="mem" data-i="f_mem">存储芯片</button>
+      </div>
+      <div class="pgrid" id="pgrid"></div>
+      <div id="pickDetail" style="margin-top:14px"></div>
+    </div>
+  </section>
+
+  <!-- ============ RUN ============ -->
+  <section class="view" id="view-run">
+    <div id="runEmpty" class="card">
+      <h2 data-i="run_empty_h">还没有在跑的批次</h2>
+      <p class="sub" data-i="run_empty_sub">先去「总览 · 选产品」挑一款产品，这里就会发放一个批次，跟着它一站一站跑完前段制程，再去封装测试、成品入库。</p>
+      <button class="btn" style="margin-top:10px" onclick="go('overview')" data-i="go_pick">去选产品</button>
+    </div>
+    <div id="runMain" class="hidden">
+      <div class="rungrid">
+        <div>
+          <div class="card" style="margin-top:6px">
+            <h2><span data-i="follow">跟随批次</span> · <span id="lotName">Lot —</span></h2>
+            <div class="fabbox" style="margin-top:8px">
+              <svg viewBox="0 0 800 300" role="img" aria-label="批次在厂区中的位置">
+                <rect width="800" height="300" fill="#dde5e8"/>
+                <rect x="16" y="16" width="768" height="268" rx="10" fill="#eef2f3" stroke="#9fb2b9" stroke-width="2"/>
+                <g stroke="#8aa0a8" stroke-width="3" fill="none"><path d="M40 70 H760 M40 160 H760 M40 250 H760"/></g>
+                <g font-size="14" font-weight="700" fill="#3c5158">
+                  <rect x="36" y="86" width="150" height="52" rx="6" fill="#bcd8dc"/><text x="52" y="118">清洗/氧化</text>
+                  <rect x="222" y="86" width="150" height="52" rx="6" fill="#f3d67b"/><text x="238" y="118">光刻</text>
+                  <rect x="408" y="86" width="150" height="52" rx="6" fill="#c3d4ea"/><text x="424" y="118">蚀刻</text>
+                  <rect x="594" y="86" width="150" height="52" rx="6" fill="#d9c8ec"/><text x="610" y="118">注入/沉积</text>
+                  <rect x="36" y="176" width="150" height="52" rx="6" fill="#cfe6cf"/><text x="52" y="208">CMP</text>
+                  <rect x="222" y="176" width="150" height="52" rx="6" fill="#f0d3c0"/><text x="238" y="208">量测</text>
+                  <rect x="408" y="176" width="150" height="52" rx="6" fill="#d5dde0"/><text x="424" y="208">封装测试</text>
+                  <rect x="594" y="176" width="150" height="52" rx="6" fill="#ffe1a8"/><text x="610" y="208">成品入库</text>
+                </g>
+                <path id="lotPath" d="M110 70 H300 H480 H670 V160 H480 H300 H110 V160" fill="none" stroke="none"/>
+                <g id="lotDot"><circle r="11" fill="#d64541" stroke="#fff" stroke-width="3"/><text y="-18" text-anchor="middle" font-size="13" font-weight="800" fill="#a02c28">FOUP</text></g>
+              </svg>
+            </div>
+            <div class="flowbar" id="flowbar">
+              <div class="seg" data-ph="0">已完成前段</div>
+              <div class="seg" data-ph="1">封装测试</div>
+              <div class="seg" data-ph="2">成品入库</div>
+            </div>
+            <progress id="progBar" value="0" max="100"></progress>
+            <div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--mut);margin-top:4px">
+              <span id="progTxt">0%</span><span id="etaTxt"></span>
+            </div>
+            <div class="ctl">
+              <button id="btnPlay">⏸ 暂停</button>
+              <button data-sp="1" class="spd on">1×</button>
+              <button data-sp="2" class="spd">2×</button>
+              <button data-sp="4" class="spd">4×</button>
+              <button id="btnStep">⏭ 单步前进</button>
+            </div>
+            <label class="switch"><input type="checkbox" id="annoyToggle"> <span data-i="annoy">烦人模式（来电更密，胆小勿开）</span></label>
+          </div>
+
+          <div class="card">
+            <h3>📍 <span id="stTitle">当前站点</span></h3>
+            <p class="sub" id="stSub"></p>
+            <div class="stage" id="stStage"></div>
+            <div class="principle" id="stPrinciple"></div>
+            <div class="stlearn hidden" id="stLearn"></div>
+          </div>
+
+          <div class="card">
+            <h3 data-i="xsec_h">晶圆剖面 · 实时结构（一层层长出来）</h3>
+            <p class="sub" data-i="xsec_sub">右边这摞就是芯片此刻的剖面：每过一站，就多一层、多一个结构。</p>
+            <div class="xsec" id="xsec"></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card" style="margin-top:6px">
+            <h3>MES 面板</h3>
+            <div class="mes" style="margin-top:8px">
+              <div class="cell wide"><div class="l" data-i="mes_lot">批次号 Lot ID</div><div class="v" id="mLot">—</div></div>
+              <div class="cell wide"><div class="l" data-i="mes_prod">产品</div><div class="v" id="mProd" style="font-size:13.5px">—</div></div>
+              <div class="cell"><div class="l" data-i="mes_cur">当前站点</div><div class="v" id="mCur">—</div></div>
+              <div class="cell"><div class="l" data-i="mes_step">当前步 / 总步数</div><div class="v" id="mStep">0 / 0</div></div>
+              <div class="cell"><div class="l" data-i="mes_done">已完成步数</div><div class="v" id="mDone">0</div></div>
+              <div class="cell"><div class="l" data-i="mes_left">剩余站数</div><div class="v" id="mLeft">0</div></div>
+              <div class="cell"><div class="l" data-i="mes_eta">预计剩余时间</div><div class="v" id="mEta">—</div></div>
+              <div class="cell"><div class="l" data-i="mes_yield">当前良率</div><div class="v" id="mYield">—</div></div>
+              <div class="cell"><div class="l" data-i="mes_hold">Hold 状态</div><div class="v" id="mHold">正常</div></div>
+              <div class="cell"><div class="l" data-i="mes_score">运行分</div><div class="v" id="mScore">80</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <h3 data-i="log_h">运行日志</h3>
+            <div class="log" id="runLog" style="margin-top:8px" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DASHBOARD ============ -->
+  <section class="view" id="view-dash">
+    <div class="kpis" style="margin-top:6px">
+      <div class="kpi"><div class="v" id="dCT">62 天</div><div class="l" data-i="d_ct">生产周期 Cycle Time</div></div>
+      <div class="kpi"><div class="v" id="dOut">1,730</div><div class="l" data-i="d_out">单日产出（片/天）</div></div>
+      <div class="kpi"><div class="v" id="dUtil">87%</div><div class="l" data-i="d_util">机台综合利用率</div></div>
+      <div class="kpi"><div class="v" id="dWIP">38,600</div><div class="l" data-i="d_wip">在制品 WIP（片）</div></div>
+    </div>
+    <div class="card">
+      <h2 data-i="bn_h">各站负载 · 找瓶颈</h2>
+      <p class="sub" data-i="bn_sub">负载越接近 100%，这一站排队越久。整条线的产出，由最忙的那一站说了算——它就是瓶颈。</p>
+      <div id="loadList" style="margin-top:6px"></div>
+      <h3 style="margin-top:16px" data-i="bn_q">瓶颈分析：现在最该给哪一站加机台？</h3>
+      <div class="stationpick" id="bnPick"></div>
+      <button class="btn warn" id="btnAddTool" disabled data-i="bn_add">＋ 添加一台机台</button>
+      <span class="sub" id="toolBudget" style="margin-left:8px">剩余加机预算：2 台</span>
+      <div class="feedback" id="bnFb"></div>
+    </div>
+    <div class="card">
+      <h2 data-i="fc_h">未来 12 周产出预测</h2>
+      <p class="sub" data-i="fc_sub">灰线 = 不加机台；蓝线 = 按当前瓶颈处置后的预测。瓶颈一缓解，瓶颈就会转移到下一站——这就是工艺整合天在做的事。</p>
+      <div id="fcChart" style="margin-top:8px"></div>
+      <div class="legend"><span><i style="background:#9db2ba"></i><span data-i="fc_base">不处置</span></span><span><i style="background:#2563eb"></i><span data-i="fc_act">处置后</span></span></div>
+    </div>
+  </section>
+
+  <!-- ============ LEARN ============ -->
+  <section class="view" id="view-learn">
+    <div class="card" style="margin-top:6px">
+      <h2>工艺学习库 · 逐个工艺吃透</h2>
+      <p class="sub">不跟批次赶路的时候，来这里一站一站学：每站都有流程分解、分步剖面、关键参数、常见缺陷、量测判定和一道自测。参数只写通用范围与相对概念，是教学示意，不是任何厂的配方。</p>
+      <div class="lprog"><i id="learnBar" style="width:0%"></i></div>
+      <p class="sub" id="learnProgTxt">已学完 0 / 13 个工艺</p>
+      <div class="lmodes" role="group" aria-label="学习方式">
+        <button class="on" id="modeSeq">🧭 按顺序学习（跟着工艺流程走）</button>
+        <button id="modeMod">🗂 按模块复习（同类工艺放一起）</button>
+      </div>
+      <h3 style="margin-top:12px">工艺之间是怎么接起来的</h3>
+      <div class="relchain">
+        <span class="node">清洗</span><span class="arr">→</span><span class="node">氧化/沉积（长一层）</span><span class="arr">→</span><span class="node">光刻（定图形）</span><span class="arr">→</span><span class="node">蚀刻（转移图形）</span><span class="arr">→</span><span class="node">去胶 + 清洗</span><span class="arr">→</span><span class="node">注入/沉积（下一层）</span><span class="arr">↺ 循环十几次</span>
+      </div>
+      <p class="sub">三条主线记牢：① <b>光刻定义图形 → 蚀刻转移图形 → 去胶清洗收尾</b>，是每一层都要重复的「图形三步」；② <b>沉积长一层、蚀刻挖出形状、CMP 磨平</b>，三者循环叠层，楼就是这么盖起来的；③ <b>离子注入把杂质打进去 → 退火修复损伤并激活杂质</b>，注入和退火永远成对出现。CMP 在多层互连里反复出现，是因为每多一层金属，表面就多一分不平。</p>
+      <div id="learnList"></div>
+    </div>
+    <div id="learnDetail"></div>
+  </section>
+
+  <!-- ============ TOUR ============ -->
+  <section class="view" id="view-tour">
+    <div class="card" style="margin-top:6px">
+      <h2 data-i="tour_h">进厂看看 · 第一人称漫游</h2>
+      <p class="sub" data-i="tour_sub">穿上无尘服，跟着镜头走一圈。真实进厂要风淋、要培训，这里点一下就行。</p>
+    </div>
+    <div class="tourgrid" id="tourGrid"></div>
+  </section>
+
+  <!-- ============ QUIZ / RESULT ============ -->
+  <section class="view" id="view-quiz">
+    <div class="card" style="margin-top:6px">
+      <h2 data-i="quiz_h">工艺常识小测验（8 题）</h2>
+      <p class="sub" data-i="quiz_sub">答完 8 题出分。和运行分一起算总分，总分 ≥ 80 解锁一个……不太正经的彩蛋。</p>
+      <div id="quizBox"></div>
+      <button class="btn big" id="btnQuizDone" disabled data-i="quiz_done">交卷看总分</button>
+    </div>
+    <div class="card hidden" id="resultCard">
+      <h2 style="text-align:center" data-i="res_h">本局结算</h2>
+      <div class="bigscore" id="resTotal">—</div>
+      <p style="text-align:center" class="sub" data-i="res_total">总分 / 100</p>
+      <div class="scoregrid">
+        <div class="cell"><div class="v" id="resRun">—</div><div class="l" data-i="res_run">运行分（处置决策）</div></div>
+        <div class="cell"><div class="v" id="resQuiz">—</div><div class="l" data-i="res_quiz">测验分</div></div>
+        <div class="cell"><div class="v" id="resBn">—</div><div class="l" data-i="res_bn">瓶颈分析</div></div>
+      </div>
+      <p id="resComment" style="text-align:center;font-weight:700"></p>
+      <div id="eggLocked">
+        <p class="sub" style="text-align:center" data-i="egg_lock">🔒 彩蛋未解锁：总分达到 80 才能打开那个红色按钮。</p>
+      </div>
+      <div id="eggZone" class="hidden">
+        <div class="boomstage" id="boomStage">
+          <div class="boomflash"></div>
+        </div>
+        <button class="btn danger big" id="btnBoom" style="margin-top:12px" data-i="egg_btn">💥 炸掉晶圆厂（仅限本模拟器）</button>
+        <p class="sub" id="boomTxt" style="text-align:center;margin-top:10px"></p>
+      </div>
+      <button class="btn ghost big" style="margin-top:10px" onclick="resetGame()" data-i="again">↺ 再来一局</button>
+    </div>
+  </section>
+
+  <p class="footnote" data-i="foot">内部培训 · 数据为示意 | Training use only · figures are illustrative</p>
+</div>
+
+<!-- phone overlay -->
+<div class="overlay" id="callOverlay" role="dialog" aria-modal="true" aria-label="来电">
+  <div class="phone" id="phoneBox">
+    <div class="ring" id="ringZone">
+      <div class="avatar ee" id="callAvatar">EE</div>
+      <div class="who" id="callWho">EE 值班</div>
+      <div class="stat" id="callStat">📱 来电中… 批次已自动 Hold，先别让它往下跑</div>
+      <div class="callbtns">
+        <button class="dec" id="btnDecline" aria-label="挂断">✕</button>
+        <button class="acc pulse" id="btnAnswer" aria-label="接听">📞</button>
+      </div>
+      <p style="text-align:center;color:#9fc0c7;font-size:12px" id="declineHint">挂断 = 当作没看见，扣分警告 ⚠</p>
+    </div>
+    <div id="talkZone" class="hidden">
+      <div class="who" id="talkWho" style="font-size:17px;text-align:left"></div>
+      <div class="stat" id="talkStat" style="text-align:left;margin-bottom:8px">通话中 00:07</div>
+      <div class="callmsg" id="callMsg"></div>
+      <div class="decs" id="callDecs"></div>
+      <div class="callfb" id="callFb"></div>
+      <button class="btn big hidden" id="btnHangup" style="margin-top:14px;background:#e5484d">挂断，继续跑批</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ================= i18n (key UI strings) ================= */
+var LANG = "zh";
+var I18N = {
+  zh:{title:"晶圆厂模拟器",subtitle:"工艺整合培训 · 跟着一个批次跑完每一站",runscore:"运行分",tab_overview:"🏭 总览 · 选产品",tab_run:"▶ 跟批运行",tab_dash:"📊 数据大屏",tab_tour:"🚶 进厂看看",tab_quiz:"📝 测验结算",ov_h:"俯瞰整座晶圆厂",pick_h:"选择产品，开始模拟",f_all:"全部",f_logic:"逻辑制程",f_mem:"存储芯片",foot:"内部培训 · 数据为示意 | Training use only · figures are illustrative"},
+  en:{title:"Wafer Fab Simulator",subtitle:"Process integration training · follow one lot through every station",runscore:"Run score",tab_overview:"🏭 Overview · Products",tab_run:"▶ Follow the Lot",tab_dash:"📊 Dashboard",tab_tour:"🚶 Fab Tour",tab_quiz:"📝 Quiz & Result",ov_h:"The fab from above",pick_h:"Pick a product to start",f_all:"All",f_logic:"Logic",f_mem:"Memory",foot:"Training use only · figures are illustrative"}
+};
+function applyLang(){
+  var d = I18N[LANG];
+  document.querySelectorAll("[data-i]").forEach(function(el){ var k=el.getAttribute("data-i"); if(d[k]) el.textContent=d[k]; });
+  document.getElementById("langBtn").textContent = LANG==="zh" ? "EN" : "中文";
+  renderProducts(currentFilter);
+}
+document.getElementById("langBtn").addEventListener("click",function(){ LANG = LANG==="zh"?"en":"zh"; applyLang(); toast(LANG==="zh"?"已切换为简体中文":"Switched to English (core UI)"); });
+
+/* ================= data ================= */
+var PRODUCTS = [
+ {code:"TRN-STI-SHORT", cat:"logic", nm:"STI 短流程", en:"STI Short Loop", steps:23, seg:"前段", ds:"只跑隔离要用的那两块有源区，工程师拿它练手、验机台，不必跑完整产品。", hot:"新手推荐"},
+ {code:"TRN-MOS-CAP", cat:"logic", nm:"MOS 电容阵列", en:"MOS Capacitor Array", steps:15, seg:"前段", ds:"四层图形电极，完整量测栅氧厚度、电容 CD 和缺陷，再测 C–V。", hot:"新手推荐"},
+ {code:"TRN-CU-COMB", cat:"logic", nm:"铜梳状结构缺陷流程", en:"Cu Comb Defect Loop", steps:16, seg:"前段", ds:"两组交错铜电极，贯穿窄缝光刻、电镀、CMP 和缺陷复查。", hot:""},
+ {code:"LOGIC-28", cat:"logic", nm:"28nm 逻辑芯片", en:"28nm Logic", steps:856, seg:"前段+后段", ds:"成熟制程主力：手机周边、物联网、车规芯片都爱用它，性价比之王。", hot:"经典款"},
+ {code:"LOGIC-14", cat:"logic", nm:"14nm 先进逻辑", en:"14nm Advanced Logic", steps:1120, seg:"前段+后段", ds:"FinFET 登场，鳍片立起来了，光刻和蚀刻的难度一起立起来。", hot:""},
+ {code:"LOGIC-7", cat:"logic", nm:"7nm 高性能逻辑", en:"7nm HPC Logic", steps:1348, seg:"前段+后段", ds:"EUV 光刻上场，一层图形一次曝光的价格，够买一辆不错的车——按秒算。", hot:"硬核"},
+ {code:"LOGIC-5", cat:"logic", nm:"5nm 旗舰 SoC", en:"5nm Flagship SoC", steps:1465, seg:"前段+后段", ds:"一千四百多步，一步都不能错。跑完它，你就是整合工程师本程。", hot:"毕业款"},
+ {code:"CMOS-4CU", cat:"logic", nm:"CMOS 逻辑（四层铜互连）", en:"CMOS Logic · 4 Cu Layers", steps:326, seg:"前段", ds:"在 CMOS 反相器上加四层铜互连，每层都要孔刻蚀和阻挡层。", hot:"教学版"},
+ {code:"DRAM-DDR5", cat:"mem", nm:"DDR5 DRAM", en:"DDR5 DRAM", steps:986, seg:"前段+后段", ds:"电容要挖得深、漏电要压得低，存储单元的命就是这么苦。", hot:""},
+ {code:"DRAM-LPDDR5", cat:"mem", nm:"LPDDR5 低功耗内存", en:"LPDDR5", steps:1054, seg:"前段+后段", ds:"给手机用的内存：快，还要省电，待机漏电多一分都不行。", hot:""},
+ {code:"NAND-232", cat:"mem", nm:"3D NAND 232 层", en:"3D NAND 232L", steps:918, seg:"前段+后段", ds:"像盖 232 层楼：先一层层叠上去，再一口气打一口深井下去蚀刻。", hot:"盖楼款"},
+ {code:"NAND-176", cat:"mem", nm:"3D NAND 176 层", en:"3D NAND 176L", steps:864, seg:"前段+后段", ds:"232 层的学长，工艺窗口更宽，新手友好一点点。", hot:""},
+ {code:"HBM3", cat:"mem", nm:"HBM3 高带宽存储", en:"HBM3", steps:802, seg:"前段+后段", ds:"多片 DRAM 用 TSV 垂直穿孔叠起来，AI 芯片的贴身粮仓。", hot:"AI 热门"},
+ {code:"NOR-128", cat:"mem", nm:"NOR Flash 128Mb", en:"NOR Flash", steps:452, seg:"前段+后段", ds:"开机代码住在这里：读得快、命要长，车规和工控的最爱。", hot:""}
+];
+var STATIONS = [
+ {key:"start", nm:"投片", en:"Wafer Start", principle:"<b>投片：</b>一片光秃秃的硅片装进 FOUP（晶圆传送盒），MES 给它发批次号，从这一刻起，它走的每一步都被记录。", layer:null},
+ {key:"clean", nm:"清洗", en:"Clean", principle:"<b>清洗：</b>用化学药液和超纯水把晶圆表面的颗粒、金属离子、有机物洗掉。无尘室的规矩：进下一站之前，先洗干净。", layer:null},
+ {key:"ox", nm:"氧化 / 扩散", en:"Oxidation", principle:"<b>氧化：</b>高温炉管里通入氧气，硅表面长出一层二氧化硅——这是后面所有图形的「地基绝缘层」。", layer:{t:"场氧化层 SiO₂",c:"#8a9ba5",note:"绝缘打底"}},
+ {key:"litho", nm:"光刻", en:"Lithography", principle:"<b>光刻：</b>先涂光刻胶，再让光线穿过掩模版，把电路图形「印」到胶上。193nm / EUV 光源、4 倍缩小透镜——全厂最贵的一站。", layer:{t:"光刻图形（曝光）",c:"#e8a013",note:"图形定义"}},
+ {key:"etch", nm:"蚀刻", en:"Etch", principle:"<b>蚀刻：</b>等离子体沿着光刻图形往下啃，把没被胶保护的地方刻掉，图形就从「印在胶上」变成「刻进材料里」。", layer:{t:"蚀刻沟槽",c:"#5b84ae",note:"图形转移"}},
+ {key:"implant", nm:"离子注入", en:"Ion Implant", principle:"<b>离子注入：</b>把硼、磷等离子加速后打进硅里，改变局部导电性——晶体管的源极、漏极就是这么「种」出来的。", layer:{t:"掺杂区 N+/P+",c:"#9a7fc0",note:"导电性调配"}},
+ {key:"dep", nm:"沉积", en:"Deposition", principle:"<b>沉积：</b>前驱气体从喷淋头均匀流入，在晶圆上发生化学反应，长出一层新膜——盖楼时浇筑新的一层。", layer:{t:"沉积薄膜",c:"#4aa3a2",note:"新的一层"}},
+ {key:"cmp", nm:"CMP 平坦化", en:"CMP", principle:"<b>CMP：</b>化学机械抛光，一边加研磨液一边转抛光垫，把表面磨平。不平的地面盖不了高楼，下一层光刻也对不准焦。", layer:{t:"平坦化表面",c:"#74a874",note:"磨平再继续"}},
+ {key:"litho2", nm:"光刻 · 金属层", en:"Litho · Metal", principle:"<b>第二轮光刻：</b>晶体管做好了，接下来给它们「拉电线」。每一层金属都要再来一轮：沉积→光刻→蚀刻→CMP，周而复始十几次。", layer:{t:"金属互连层 Cu",c:"#c97b4a",note:"拉电线"}},
+ {key:"met", nm:"量测 / 检测", en:"Metrology", principle:"<b>量测：</b>量 CD（关键尺寸）、膜厚、套刻精度，扫缺陷。数据不对，批次就 Hold 住——宁可停线，不放坏片。", layer:null},
+ {key:"pack", nm:"封装测试", en:"Packaging & Test", principle:"<b>封装测试：</b>晶圆送去后段：切割成一颗颗芯片、封装保护、上机测试。没通过测试的，当场淘汰。", layer:null},
+ {key:"done", nm:"成品入库", en:"Finished Goods", principle:"<b>入库：</b>良品贴标入库，等待出货。一片硅片旅行了上千步，终于变成一颗能卖的芯片。", layer:null}
+];
+function stationSVG(key){
+  var beam='<rect x="70" y="6" width="10" height="34" fill="#ffd94d"><animate attributeName="opacity" values="1;.25;1" dur="1s" repeatCount="indefinite"/></rect>';
+  var wafer='<ellipse cx="75" cy="88" rx="52" ry="12" fill="#9db2ba"/><ellipse cx="75" cy="84" rx="52" ry="12" fill="#cfd9dd"/>';
+  var head='<rect x="30" y="16" width="90" height="14" rx="4" fill="#5b6d75"/>';
+  var o={};
+  o.start='<svg viewBox="0 0 150 105"><rect x="35" y="30" width="80" height="52" rx="8" fill="#7fa8ad"/><rect x="45" y="40" width="60" height="8" rx="4" fill="#e8edef"><animate attributeName="y" values="40;56;40" dur="2s" repeatCount="indefinite"/></rect>'+wafer+'</svg>';
+  o.clean='<svg viewBox="0 0 150 105">'+wafer+'<g fill="#4db2e8"><circle cx="55" cy="40" r="4"><animate attributeName="cy" values="30;66;30" dur="1.6s" repeatCount="indefinite"/></circle><circle cx="75" cy="34" r="3"><animate attributeName="cy" values="24;64;24" dur="1.3s" repeatCount="indefinite"/></circle><circle cx="95" cy="42" r="4"><animate attributeName="cy" values="32;66;32" dur="1.9s" repeatCount="indefinite"/></circle></g><text x="75" y="16" text-anchor="middle" font-size="10" fill="#5b6d75">超纯水 + 药液喷淋</text></svg>';
+  o.ox='<svg viewBox="0 0 150 105"><rect x="25" y="26" width="100" height="46" rx="10" fill="#e0e6e9" stroke="#b9602f" stroke-width="3"><animate attributeName="stroke" values="#b9602f;#e87f35;#b9602f" dur="1.4s" repeatCount="indefinite"/></rect>'+wafer+'<text x="75" y="16" text-anchor="middle" font-size="10" fill="#b9602f">高温炉管 ~1000°C</text></svg>';
+  o.litho='<svg viewBox="0 0 150 105">'+head+'<rect x="52" y="34" width="46" height="6" fill="#33474f"/>'+beam+wafer+'<rect x="48" y="76" width="54" height="7" fill="#e8a013"><animate attributeName="opacity" values="1;.5;1" dur="1s" repeatCount="indefinite"/></rect><text x="75" y="102" text-anchor="middle" font-size="9" fill="#5b6d75">掩模版图形 → 光刻胶</text></svg>';
+  o.etch='<svg viewBox="0 0 150 105">'+head+'<g fill="#7a5fd0"><circle cx="55" cy="44" r="3"><animate attributeName="cy" values="38;76" dur=".8s" repeatCount="indefinite"/></circle><circle cx="75" cy="44" r="3"><animate attributeName="cy" values="38;76" dur=".7s" repeatCount="indefinite"/></circle><circle cx="95" cy="44" r="3"><animate attributeName="cy" values="38;76" dur=".9s" repeatCount="indefinite"/></circle></g>'+wafer+'<path d="M52 82 l6 8 M70 82 l6 8 M88 82 l6 8" stroke="#5b84ae" stroke-width="3"/></svg>';
+  o.implant='<svg viewBox="0 0 150 105"><g stroke="#9a7fc0" stroke-width="3"><line x1="45" y1="8" x2="62" y2="72"><animate attributeName="opacity" values="1;.2;1" dur=".7s" repeatCount="indefinite"/></line><line x1="75" y1="8" x2="75" y2="72"><animate attributeName="opacity" values=".2;1;.2" dur=".7s" repeatCount="indefinite"/></line><line x1="105" y1="8" x2="88" y2="72"><animate attributeName="opacity" values="1;.2;1" dur=".8s" repeatCount="indefinite"/></line></g>'+wafer+'<text x="75" y="102" text-anchor="middle" font-size="9" fill="#5b6d75">离子束加速打入硅中</text></svg>';
+  o.dep='<svg viewBox="0 0 150 105">'+head+'<g fill="#4aa3a2"><circle cx="50" cy="42" r="2.6"><animate attributeName="cy" values="36;76" dur="1.1s" repeatCount="indefinite"/></circle><circle cx="65" cy="42" r="2.6"><animate attributeName="cy" values="36;76" dur="1.3s" repeatCount="indefinite"/></circle><circle cx="80" cy="42" r="2.6"><animate attributeName="cy" values="36;76" dur="1s" repeatCount="indefinite"/></circle><circle cx="95" cy="42" r="2.6"><animate attributeName="cy" values="36;76" dur="1.2s" repeatCount="indefinite"/></circle></g>'+wafer+'<rect x="26" y="78" width="98" height="5" fill="#4aa3a2"><animate attributeName="height" values="3;7;3" dur="2s" repeatCount="indefinite"/></rect><text x="75" y="14" text-anchor="middle" font-size="9" fill="#5b6d75">前驱气体 · 喷淋头</text></svg>';
+  o.cmp='<svg viewBox="0 0 150 105"><circle cx="75" cy="46" r="30" fill="#74a874"><animateTransform attributeName="transform" type="rotate" from="0 75 46" to="360 75 46" dur="3s" repeatCount="indefinite"/></circle><circle cx="75" cy="46" r="30" fill="none" stroke="#4d7a4d" stroke-width="2" stroke-dasharray="6 8"/>'+wafer+'<text x="75" y="102" text-anchor="middle" font-size="9" fill="#5b6d75">抛光垫旋转 + 研磨液</text></svg>';
+  o.litho2=o.litho;
+  o.met='<svg viewBox="0 0 150 105">'+wafer+'<rect x="20" y="30" width="110" height="4" fill="#d64541"><animate attributeName="y" values="30;66;30" dur="2s" repeatCount="indefinite"/></rect><text x="75" y="18" text-anchor="middle" font-size="10" fill="#d64541">扫描量测中…</text></svg>';
+  o.pack='<svg viewBox="0 0 150 105"><g><rect x="30" y="34" width="26" height="26" rx="3" fill="#33474f"/><rect x="66" y="34" width="26" height="26" rx="3" fill="#33474f"><animate attributeName="opacity" values="1;.4;1" dur="1.2s" repeatCount="indefinite"/></rect><rect x="102" y="34" width="26" height="26" rx="3" fill="#1e9e62"/></g><text x="75" y="86" text-anchor="middle" font-size="10" fill="#5b6d75">切割 · 封装 · 测试分选</text></svg>';
+  o.done='<svg viewBox="0 0 150 105"><rect x="40" y="28" width="70" height="50" rx="6" fill="#c97b4a"/><path d="M40 44 h70 M75 28 v50" stroke="#a05e30" stroke-width="3"/><text x="75" y="96" text-anchor="middle" font-size="11" font-weight="700" fill="#1e9e62">✓ 良品入库</text></svg>';
+  return o[key]||o.start;
+}
+var CALLS = [
+ {at:3, who:"EE 值班", role:"ee", av:"EE", msg:"「光刻 3 号机报警：套刻对准偏移超标，Drift 已经飘出规格上限。这片刚曝光完，你说怎么办？」", decs:[
+   {t:"先 Hold 本批，停机请设备工程师校准对准系统", pts:10, fb:"good", why:"判对了。套刻飘移会让这一层和下一层对不齐，越往后跑报废越多。先 Hold + 停机校准，是标准动作。"},
+   {t:"让它继续跑，下一片再看看", pts:-10, fb:"bad", why:"判错。偏移超标还放行，等于拿一整批晶圆赌运气——赌输了是整批报废，这通电话会被刻在耻辱柱上。"},
+   {t:"降一档曝光剂量凑合过", pts:-6, fb:"bad", why:"不对。问题在对准不在剂量，改剂量只会再添一个变量。"}]},
+ {at:4, who:"PE 值班", role:"pe", av:"PE", msg:"「蚀刻站前面 WIP 堆了一长串，客户又在催货。能不能让这个批次跳过一道清洗直接进蚀刻？能省 40 分钟。」", decs:[
+   {t:"不行，流程一步不能跳；我帮你协调前站加速派工", pts:10, fb:"good", why:"判对了。跳站省下的 40 分钟，换来的是整批污染风险。催货要靠派工和排程解，不是靠拆流程解。"},
+   {t:"跳吧，客户最大，出问题我担着", pts:-10, fb:"bad", why:"判错，而且这句话会被录音。跳站是工艺整合的大忌，真出事没人担得起。"},
+   {t:"把批次 Hold 住，等 WIP 消化完再说", pts:3, fb:"mid", why:"不算错，但太保守：WIP 堆积是排程问题，Hold 本批只会让交期更晚。给个及格分。"}]},
+ {at:7, who:"EE 值班", role:"ee", av:"EE", msg:"「CMP 完的抽检片划痕明显变多，抛光垫寿命还剩 30%。我怀疑垫子不行了，但换垫要停机两小时……」", decs:[
+   {t:"Hold 本批送量测复核，同时安排换垫，别硬撑", pts:10, fb:"good", why:"判对了。划痕是缺陷杀手，停机两小时换垫，远比报废一批便宜。"},
+   {t:"剩 30% 寿命呢，撑到换班再说", pts:-8, fb:"bad", why:"判错。寿命数字是参考，抽检划痕是实锤。用实锤换数字，方向反了。"},
+   {t:"降低抛光压力继续跑", pts:-4, fb:"bad", why:"不对。压力降了平坦度就没了，下一层光刻直接失焦。"}]},
+ {at:9, who:"PE 值班", role:"pe", av:"PE", msg:"「量测数据出来了：CD 偏大但还在规格内，就是贴着上限走。放行还是扣住？你一句话。」", decs:[
+   {t:"规格内就放行，但标记加密监控，下一站复测", pts:10, fb:"good", why:"判对了。在规格内 = 合格，工艺整合讲数据不讲感觉；但贴上限走要加密监控，这叫有分寸。"},
+   {t:"贴着上限太危险，整批 Hold 重做", pts:-5, fb:"bad", why:"过度反应。合格品被你扣下重做，周期和成本一起爆炸，主管会来找你喝茶。"},
+   {t:"放行，什么都不用管", pts:2, fb:"mid", why:"结论对，动作糙。贴着规格上限的批次不标记监控，下一站出事你都不知道。"}]},
+ {at:10, who:"测试工程师", role:"mg", av:"测", msg:"「封装测试站回报：这批抽测不良率比平时高一截，偏偏测试程序版本昨天刚更新过。这批先怎么处理？」", decs:[
+   {t:"先 Hold 本批，用旧版程序复测同一批，确认是产品问题还是程序问题", pts:10, fb:"good", why:"判对了。不良率跳变又赶上程序更新，第一嫌疑是测试本身。先复测分清敌我，别把好芯片当废品扔，也别放坏的出去。"},
+   {t:"不良就是不良，整批降级处理，赶紧出货", pts:-10, fb:"bad", why:"判错。要是程序误判，你扔掉的是一整批好芯片；要是真不良，降级出货就是把雷埋给客户。"},
+   {t:"把测试限值放宽一点，不良率就下来了", pts:-8, fb:"bad", why:"大忌。为了数字好看去动测试限值，等于自己给自己发合格证，出事时这就是证据。"}]}
+];
+var ANNOY_CALLS = [
+ {who:"食堂阿姨", role:"xx", av:"饭", msg:"「小师傅，今晚夜宵有卤肉饭和牛肉面，你值班的留哪份？……什么？你在跑批？那卤肉饭吧，抗饿。」", decs:[
+   {t:"卤肉饭，谢谢阿姨（快速结束通话）", pts:3, fb:"good", why:"处理得当：3 秒解决战斗，阿姨开心，你继续跑批。"},
+   {t:"跟阿姨聊聊今晚的菜单为什么没有饺子", pts:-4, fb:"bad", why:"批次在等你，饺子不会。这通电话聊掉了一片晶圆的青春。"}]},
+ {who:"快递小哥", role:"xx", av:"递", msg:"「你好，你的快递到厂门口了，麻烦出来取一下。……什么无尘室不能出？那我放门卫了啊，记得给五星。」", decs:[
+   {t:"放门卫，谢谢（挂断）", pts:3, fb:"good", why:"干脆利落。跑批期间，世界与你无关，除了警报。"},
+   {t:"等我跑完这批亲自去取", pts:-3, fb:"mid", why:"快递等得了，批次等不了——顺序反了，扣一点清醒分。"}]}
+];
+var QUIZ = [
+ {q:"光刻这一步，真正把图形「印」到晶圆上的介质是？", opts:["掩模版直接接触晶圆刻字","光穿过掩模版，曝光光刻胶","激光在硅上烧出沟槽","电子束逐点描画"], a:1, exp:"光刻 = 光穿过掩模版图形，曝光晶圆上的光刻胶，显影后图形留在胶上，再靠蚀刻转移下去。"},
+ {q:"蚀刻的作用是？", opts:["给晶圆镀一层金属","把表面的灰洗掉","沿光刻图形把材料刻掉，图形转移进材料","把晶圆磨平"], a:2, exp:"光刻只把图形留在胶上，蚀刻才把它真正刻进材料里。"},
+ {q:"CMP（化学机械抛光）最主要解决什么问题？", opts:["晶圆不够圆","表面不平，影响下一层光刻对焦","晶圆太厚拿不动","颜色不好看"], a:1, exp:"层数越叠越高，表面必须磨平，下一层光刻才能对准焦、套得准。"},
+ {q:"离子注入是在做什么？", opts:["给晶圆充电防静电","把杂质离子打进硅里，改变局部导电性","注入冷却液降温","往晶圆里注水清洗"], a:1, exp:"硼、磷等离子被加速打入硅中，形成晶体管的源/漏等掺杂区。"},
+ {q:"量测数据还在规格内、只是贴着上限，正确做法是？", opts:["整批报废","放行，但标记加密监控","不用管，继续睡","立刻停线三天"], a:1, exp:"规格内即合格，但要加密监控——讲数据，也讲分寸。"},
+ {q:"一条产线的产出由什么决定？", opts:["最快的机台","最贵的那台光刻机","负载最高的瓶颈站","厂长的意志"], a:2, exp:"木桶效应：瓶颈站的产能就是全线的产能上限，所以要先给它加机台/分流。"},
+ {q:"给瓶颈站加了一台机台之后，通常会发生什么？", opts:["全线再无瓶颈","瓶颈转移到下一站","良率自动变 100%","可以提前下班"], a:1, exp:"瓶颈会转移——缓解一处，下一处顶上来，这就是瓶颈分析要反复做的原因。"},
+ {q:"发现套刻偏移超标，第一动作应该是？", opts:["继续放行赌一把","改曝光剂量凑合","Hold 批次 + 停机校准","把报警关掉"], a:2, exp:"先 Hold 止损、停机找根因，再谈恢复生产。放行赌运气是报废整批的捷径。"}
+];
+var TOUR = [
+ {nm:"黄光区 · 光刻间", col:"#f3d67b", ds:"整个区域泡在黄光里：光刻胶怕白光里的紫外线，黄光一照，胶就安全了。光刻机在这里一台挨一台，每台的价格都够买一栋楼。", svg:'<svg viewBox="0 0 320 150"><rect width="320" height="150" fill="#f7e08a"/><rect y="104" width="320" height="46" fill="#d9b84a"/><g fill="#fff8dd" stroke="#c9a437"><rect x="24" y="52" width="70" height="52" rx="6"/><rect x="126" y="52" width="70" height="52" rx="6"/><rect x="228" y="52" width="70" height="52" rx="6"/></g><rect x="0" y="18" width="320" height="10" fill="#8a6d1a"/><circle cx="70" cy="23" r="5" fill="#33474f"/><text x="160" y="140" text-anchor="middle" font-size="12" fill="#6b5205">AMHS 天车在头顶送 FOUP</text></svg>'},
+ {nm:"蚀刻区", col:"#c3d4ea", ds:"等离子体在腔体里发着幽幽的光，把图形一口口啃进材料里。这里最讲「均匀」二字：中心和边缘刻得不一样，整片就废了。", svg:'<svg viewBox="0 0 320 150"><rect width="320" height="150" fill="#b9cfe8"/><rect y="104" width="320" height="46" fill="#84a3c9"/><g><rect x="40" y="44" width="64" height="60" rx="8" fill="#e7eef6" stroke="#5b7ba3"/><circle cx="72" cy="74" r="16" fill="#8f7be0"><animate attributeName="opacity" values="1;.45;1" dur="1.4s" repeatCount="indefinite"/></circle><rect x="136" y="44" width="64" height="60" rx="8" fill="#e7eef6" stroke="#5b7ba3"/><circle cx="168" cy="74" r="16" fill="#8f7be0"><animate attributeName="opacity" values=".45;1;.45" dur="1.4s" repeatCount="indefinite"/></circle><rect x="232" y="44" width="64" height="60" rx="8" fill="#e7eef6" stroke="#5b7ba3"/><circle cx="264" cy="74" r="16" fill="#8f7be0"/></g><text x="160" y="140" text-anchor="middle" font-size="12" fill="#274b73">等离子体腔体 · 紫光是它在干活</text></svg>'},
+ {nm:"洁净走廊", col:"#e8edef", ds:"Class 1 级别的空气：每立方英尺里大于 0.5 微米的颗粒不超过 1 个，比手术室干净上万倍。走在这里，脚步都要放轻——灰尘是芯片的头号天敌。", svg:'<svg viewBox="0 0 320 150"><rect width="320" height="150" fill="#eef2f3"/><path d="M110 0 L138 150 M210 0 L182 150" stroke="#c3ced2" stroke-width="3"/><rect y="112" width="320" height="38" fill="#d5dde0"/><g fill="#fff" stroke="#b9c6cb"><rect x="30" y="52" width="34" height="60" rx="6"/><rect x="256" y="52" width="34" height="60" rx="6"/></g><circle cx="47" cy="44" r="9" fill="#f2d5c4"/><circle cx="273" cy="44" r="9" fill="#f2d5c4"/><text x="160" y="140" text-anchor="middle" font-size="12" fill="#5b6d75">无尘服全副武装 · 只露眼睛</text></svg>'}
+];
+
+/* ================= LEARN library ================= */
+var SUB=["硅衬底 Si","#6b7f88"];
+var LEARN=[
+{key:"clean",nm:"晶圆清洗",en:"Wafer Clean",cat:"表面准备",purpose:"把晶圆表面的颗粒、金属离子、有机物和原生氧化层洗掉。几乎每道关键工艺前后都要洗一次——清洗是全厂出现次数最多的工序，没有之一。",
+ inp:"上一站出来的晶圆：表面带着颗粒、药液残留或薄薄一层自然氧化层。",outp:"表面洁净、状态可控的晶圆，可以放心进下一站；洁净度直接决定后面长膜和图形的质量。",
+ steps:["兆声/刷洗预处理｜用超纯水加兆声波或软刷，先把附着的大颗粒冲松、带走。","化学清洗｜按污染类型上药液：去有机物、去金属离子、去颗粒，各有各的药方，顺序不能乱。","漂洗｜大量超纯水反复冲洗，把药液和被洗下的污染一起带走，不留残留。","甩干/干燥｜高速旋转加氮气或 IPA 蒸气干燥，目标是干透且不留水痕。","洁净度抽检｜颗粒计数和表面检查过关，才放行到下一站。"],
+ equip:"湿法清洗台（Wet Bench）/ 单片清洗机",parts:"药液槽、兆声发生器、喷淋臂、超纯水（UPW）系统、旋转甩干腔",
+ params:[["药液配比与温度","按污染类型选药，温度一般在室温到约 80°C 量级，配比决定清洗力与腐蚀性的平衡"],["时间","单步几十秒到几分钟；太短洗不净，太长可能伤表面"],["颗粒目标","越先进的制程，能容忍的颗粒越小、越少；颗粒尺寸接近线宽量级就是杀手"],["超纯水电阻率","接近理论极限的高纯度，水里几乎不带任何离子"]],
+ defects:[["颗粒残留","后面长膜会把颗粒包进去形成凸起或针孔，图形区中招就直接报废该 Die"],["金属离子污染","会钻进硅里改变电性、增加漏电，是良率的隐形杀手"],["水痕/干燥斑","局部表面状态不一致，下一站涂胶或长膜就会不均匀"],["清洗不足的有机残留","光刻胶涂不匀、附着差，显影后图形发花"]],
+ metro:"颗粒扫描仪数表面颗粒、抽测金属污染、看水接触角判断表面状态。逻辑很朴素：颗粒数和污染水平回到基线范围内才算洗干净。",
+ tip:"易混点：清洗≠蚀刻。清洗只动「表面上的脏东西」，目标材料本身基本不动；蚀刻是真刀真枪去掉目标材料一层。口诀：清洗洗浮尘，蚀刻动真格。",
+ prod:"逻辑制程怕颗粒（线宽越小颗粒越致命）；DRAM/3D NAND 的深孔深槽结构多，更怕孔底清洗不净和干燥时图形倒伏。",
+ rel:"清洗是所有工艺的「门卫」：氧化、沉积、光刻、蚀刻前后都要过它。蚀刻后去胶，也要靠清洗收尾。",
+ quiz:{q:"清洗和蚀刻最根本的区别是？",opts:["用的药液颜色不同","清洗只去表面污染，蚀刻去除目标材料本身","清洗在白天做，蚀刻在夜班做","没有区别，可以互换"],a:1,exp:"清洗动的是「脏东西」，蚀刻动的是「材料本身」——目的完全不同，参数也完全不同。"},
+ xb:[[SUB[0],SUB[1]],["表面污染：颗粒/有机物/金属离子","#b0524a"]],xa:[[SUB[0],SUB[1]],["洁净表面（待下一站）","#a8c6cf"]]},
+{key:"ox",nm:"氧化",en:"Oxidation",cat:"表面准备",purpose:"在高温下让硅表面和氧气/水汽反应，长出一层二氧化硅（SiO₂）。这层氧化硅是绝缘层、是掩蔽层，也是晶体管栅极的命根子。",
+ inp:"清洗干净的裸硅片，表面状态一致。",outp:"表面覆盖一层厚度可控的 SiO₂：薄的做栅氧化层，厚的做场氧化/隔离与掩蔽。",
+ steps:["装片进炉｜晶圆排进石英舟，推入高温炉管，氮气保护下升温。","通气反应｜通入氧气（干氧）或水汽（湿氧），硅表面被逐步氧化成 SiO₂。","厚度控制｜靠温度和时间控制厚度：长得越久越厚，湿氧快、干氧慢但致密。","降温取片｜缓慢降温避免热应力，取出后送量测。","膜厚量测｜椭偏仪量厚度与均匀性，合格才放行。"],
+ equip:"高温扩散炉（立式炉管）",parts:"石英炉管、加热线圈、石英舟、气体流量控制（MFC）、尾气处理",
+ params:[["温度","约 800–1200°C 量级，是全厂温度最高的工序之一"],["干氧 vs 湿氧","湿氧长得快、膜较疏松，常用于厚氧化层；干氧慢但致密，用于关键栅氧"],["膜厚","栅氧化层可薄到纳米量级，场氧化层则厚得多；均匀性直接影响器件一致性"],["时间","从几十分钟到数小时，按目标厚度算"]],
+ defects:[["膜厚不均","同一片上器件电性参差不齐，栅氧偏薄处容易击穿"],["针孔/缺陷","氧化层有洞，后续掺杂会从洞里漏进去，隔离失效"],["颗粒被包入","氧化前没洗净的颗粒会被封在膜里，成为永久缺陷"],["热应力滑移","升降温太猛，硅片内部产生位错，后面步步受影响"]],
+ metro:"椭偏仪量膜厚和折射率、片内多点测均匀性；栅氧还要抽测电性（击穿电压、漏电）。厚度在目标窗口内、均匀性达标才算合格。",
+ tip:"记忆点：氧化是「硅自己变出来的膜」——消耗的是衬底的硅；沉积是「外面贴上去的膜」。一个向内长，一个向外加。",
+ prod:"逻辑制程的栅氧化层最要命：越先进越薄，漏电和击穿全看它。DRAM 更看重厚场氧化和隔离质量。现代先进制程栅极多改用高 K 材料沉积，氧化更多用在隔离与牺牲层。",
+ rel:"氧化常在清洗之后、光刻之前出现；长好的氧化层会被光刻+蚀刻开出窗口，让离子注入只进该进的地方。",
+ quiz:{q:"湿氧氧化和干氧氧化，哪个长得快、哪个更致密？",opts:["湿氧快但较疏松，干氧慢但致密","干氧快，湿氧致密","一样快，一样致密","湿氧只能长 1 纳米"],a:0,exp:"水汽在氧化层里扩散更快，所以湿氧长得快；干氧慢工出细活，膜更致密，关键栅氧常用干氧或干湿结合。"},
+ xb:[[SUB[0],SUB[1]]],xa:[[SUB[0],SUB[1]],["二氧化硅 SiO₂（生长层）","#8a9ba5"]]},
+{key:"litho",nm:"光刻",en:"Lithography",cat:"图形转移",purpose:"把电路图形从掩模版「印」到晶圆上的光刻胶里。它是定义线宽（CD）的工序，也是全厂最贵、最核心的一站——涂胶、曝光、显影三步缺一不可。",
+ inp:"表面已备好（有待图形化的膜层）、状态均匀的晶圆。",outp:"光刻胶上出现与掩模版对应的图形窗口：该挡的地方有胶，该开的地方露出下层材料，等蚀刻来转移。",
+ steps:["涂胶｜晶圆高速旋转，滴上光刻胶甩成均匀薄膜，再软烘赶走溶剂。胶厚和均匀性先过关。","对准｜光刻机把本层图形和下层已有的标记对齐（套刻），先进制程要对到纳米量级。","曝光｜光线（深紫外 DUV 或极紫外 EUV）穿过掩模版，把图形投到胶上，被照到的胶发生化学变化。","烘烤（PEB）｜曝光后烘烤让化学反应完成、图形边缘更稳定，温控非常敏感。","显影｜显影液把该去掉的胶溶掉，图形窗口打开；冲洗定影后检查 CD 和套刻。"],
+ equip:"涂胶显影机（Track）+ 光刻机（Scanner / EUV 机台）",parts:"旋转涂胶杯、掩模版（Reticle）、投影透镜（缩小约 4 倍）、对准系统、激光/EUV 光源、精密工件台",
+ params:[["线宽 CD","这一层的图形有多细由它定义；越先进的节点 CD 越小，控制越严"],["套刻精度 Overlay","本层与下层对齐的偏差，先进节点只允许纳米级误差，超标整层作废"],["曝光剂量与焦距","剂量和焦深有个工艺窗口：偏了 CD 就变、图形就糊"],["胶厚与均匀性","胶太厚分辨率差，太薄挡不住蚀刻"]],
+ defects:[["套刻偏移","本层和下层错位，晶体管该连的没连上——跟批来电里最经典的那通就是它"],["CD 超差","线条太粗或太细，电性直接漂移，严重时整批 Hold"],["胶残留/显影不净","窗口没开干净，蚀刻刻不下去，形成断路"],["颗粒/气泡","胶里进颗粒，该曝光的地方被挡住，图形缺角"],["桥连/断线","相邻图形粘连或断开，分别对应短路和开路"]],
+ metro:"量测机台量 CD（CD-SEM）和套刻误差（Overlay），缺陷扫描查颗粒与图形异常。判定逻辑：CD 在窗口内、套刻不超限、缺陷密度可接受，三样都过才放行蚀刻。",
+ tip:"易混点：光刻只把图形留在「胶」上，还没动材料；蚀刻才把图形刻进材料。口诀：光刻画线，蚀刻动刀。和下一站是一对搭档，别记反。",
+ prod:"逻辑制程的光刻层数最多、CD 和套刻最严苛，EUV 主要用在这里。3D NAND 层数靠叠，单层图形相对宽松，但总层数惊人；DRAM 的电容和位线图形密度高，套刻同样不能松。",
+ rel:"光刻在每一层都会出现：沉积/氧化长好一层 → 光刻定图形 → 蚀刻转移 → 去胶清洗，然后下一层再来一轮。先进逻辑要重复几十次。",
+ quiz:{q:"光刻完成后，图形实际存在于哪里？",opts:["已经刻进硅里了","只在光刻胶上，下层材料还没动","存在掩模版的缓存里","在量测报告里"],a:1,exp:"光刻只改变光刻胶，图形转移进材料是下一步蚀刻的事。这也是为什么蚀刻前胶出问题，还来得及重工（去胶重涂）。"},
+ xb:[[SUB[0],SUB[1]],["待图形化膜层","#4aa3a2"]],xa:[[SUB[0],SUB[1]],["待图形化膜层","#4aa3a2"],["光刻胶图形（窗口打开）","#e8a013"]]},
+{key:"etch",nm:"蚀刻",en:"Etch",cat:"图形转移",purpose:"沿着光刻胶打开的窗口，把下层材料去掉，让图形从胶上真正转移进材料里。分干法（等离子体）和湿法（药液）两大流派。",
+ inp:"光刻完成、胶图形已打开的晶圆。",outp:"材料层被刻出沟槽/孔洞图形；之后去胶清洗，留下干净的立体结构。",
+ steps:["进腔/入槽｜干法把晶圆送入真空腔通入蚀刻气体；湿法把晶圆浸入药液槽。","起辉/反应｜干法点燃等离子体，活性粒子和离子轰击表面；湿法靠化学反应溶解材料。","图形转移｜没被胶保护的材料被逐步去除，窗口越刻越深，直到目标深度。","终点判定｜靠光学信号或时间判断刻到位，及时停——多刻一秒都算过刻。","去胶 + 清洗｜把用过的光刻胶剥掉并洗净，露出最终图形，送量测查深度和侧壁。"],
+ equip:"干法：等离子体蚀刻机；湿法：蚀刻清洗槽",parts:"真空腔体、射频电源、电极/线圈、气体面板、终点检测窗；湿法为药液槽与循环过滤",
+ params:[["蚀刻速率与选择比","刻目标材料要快、刻光刻胶和下层要慢——选择比就是「认人下刀」的程度"],["均匀性","整片刻得一样深，中心边缘不能差太多"],["侧壁形貌","想要垂直侧壁（各向异性）还是圆滑（各向同性），决定器件形状"],["深宽比","孔/槽越深越窄越难刻；高深宽比是 3D NAND 的招牌难题"]],
+ defects:[["过刻","刻过头，伤到下层或把线条刻细，电性漂移甚至断线"],["欠刻/残留","没刻透，底部还有残膜，该通的孔没通，开路"],["侧壁倾斜/钻蚀","图形变形，CD 失控，相邻结构可能短路"],["等离子损伤","离子轰击伤到栅氧等敏感结构，漏电上升"],["负载效应不均","图形疏密不同的区域刻速不同，稀疏区过刻、密集区欠刻"]],
+ metro:"量测刻蚀深度、CD 和侧壁角，缺陷扫描查残留；抽片做剖面确认。判定逻辑：深度和 CD 都在窗口内、无残留、损伤可控，才算转移成功。",
+ tip:"干法 vs 湿法：干法（等离子）方向性好、能刻垂直细槽，贵且可能伤表面；湿法（药液）各向同性、便宜干净，但细图形会钻蚀。细活找干法，大面积均匀去除常用湿法。",
+ prod:"3D NAND 最吃蚀刻：要一口气刻穿上百层叠层、深宽比极高，刻速和侧壁都是极限挑战。逻辑制程重 CD 控制和损伤；DRAM 深电容沟槽同样考验深孔蚀刻。",
+ rel:"蚀刻永远跟在光刻后面，接过图形往下刻；刻完去胶清洗。沉积补一层、蚀刻挖一次，两者交替就把多层结构叠出来了。",
+ quiz:{q:"需要刻一条又窄又垂直的深槽，优先选哪种蚀刻？",opts:["湿法，药液便宜","干法，等离子体方向性好","随便，哪种都一样垂直","先湿后干各刻一半"],a:1,exp:"干法的离子沿电场方向轰击，方向性强，能刻出接近垂直的侧壁；湿法各向同性会往两边钻蚀，细槽会变宽变形。"},
+ xb:[[SUB[0],SUB[1]],["材料层","#4aa3a2"],["光刻胶图形","#e8a013"]],xa:[[SUB[0],SUB[1]],["材料层（图形已刻入）","#5b84ae"]]},
+{key:"implant",nm:"离子注入",en:"Ion Implant",cat:"掺杂与热处理",purpose:"把硼、磷、砷等杂质离子加速成一束「子弹」，打进硅的指定深度，改变那片区域的导电类型和电阻——晶体管的源极、漏极、阱区都是这么「种」出来的。",
+ inp:"表面有掩蔽层（氧化层/光刻胶图形）开好窗口的晶圆，只让该掺杂的区域露出来。",outp:"指定区域被掺入杂质，形成 N 型或 P 型区；但晶格被撞伤、杂质还没「激活」，要等退火收尾。",
+ steps:["离子源产生离子｜把杂质气体电离，得到想要的离子（B⁺、P⁺ 等）。","筛选与加速｜磁场把杂质离子从杂离子里筛出来，电场加速到目标能量——能量决定打多深。","扫描打入｜离子束均匀扫过晶圆表面，从窗口打进硅里，被掩蔽的地方挡住。","剂量控制｜靠束流×时间精确控制打进去多少个离子——剂量决定掺杂浓度。","送退火｜注入后的晶圆排队去退火，修复损伤、激活杂质（下一站）。"],
+ equip:"离子注入机",parts:"离子源、质量分析磁铁、加速管、扫描系统、束流剂量计",
+ params:[["能量","决定注入深度：能量越高打得越深，从浅结到深阱差着量级"],["剂量","每平方厘米打多少个离子，决定掺杂浓度，直接影响电阻和阈值电压"],["角度","倾斜注入可防沟道效应，也用来做特殊的浅掺杂分布"],["束流均匀性","扫得不均，整片器件电性就会东高西低"]],
+ defects:[["剂量漂移","浓度偏了，阈值电压和电阻跟着漂，整批电性偏移"],["沟道效应","离子沿晶格缝隙跑得过深，结深失控"],["晶格损伤过重","打得太狠，退火也修不回来，漏电上升"],["掩蔽不足","离子穿透薄掩蔽层打进不该进的区域，器件互相干扰"],["金属污染","注入机部件溅出金属离子，污染衬底"]],
+ metro:"用热波/四探针量片电阻（方块电阻）看剂量对不对、均不均，抽测结深和 SIMS 浓度分布。判定逻辑：电阻值回到目标窗口、片内均匀，说明剂量和能量都对了。",
+ tip:"易混点：注入≠扩散。注入是「打进去」，深度靠能量、浓度靠剂量，精准但伤晶格；扩散是「热运动渗进去」，温和但控制粗。现代制程以注入为主、退火收尾。",
+ prod:"逻辑制程的源漏和阱区全靠注入，能量/剂量档位最多。DRAM 更在意漏电，注入后的损伤控制更敏感。功率器件则要用高能量做深结。",
+ rel:"注入只往光刻/氧化开好的窗口里打；打完必须退火——修复被撞坏的晶格，并让杂质占上晶格位置「激活」导电。注入和退火是固定搭档。",
+ quiz:{q:"想让杂质打得更深，主要调哪个参数？",opts:["剂量","能量","扫描速度","晶圆转速"],a:1,exp:"能量决定深度，剂量决定浓度。记法：能量管「多深」，剂量管「多少」。"},
+ xb:[[SUB[0],SUB[1]],["掩蔽层（窗口打开）","#8a9ba5"]],xa:[[SUB[0],SUB[1]],["掩蔽层（窗口打开）","#8a9ba5"],["掺杂区 N+/P+（晶格待修复）","#9a7fc0"]]},
+{key:"anneal",nm:"扩散 / 退火",en:"Diffusion / Anneal",cat:"掺杂与热处理",purpose:"给晶圆加热：让杂质在硅里扩散到合适的位置（扩散），或修复离子注入撞坏的晶格、把杂质「激活」到晶格位置上开始导电（退火）。",
+ inp:"刚注入完、晶格带伤、杂质未激活的晶圆（或需要杂质再分布的晶圆）。",outp:"晶格修复、杂质激活并分布到目标深度，电性正式成形。",
+ steps:["装片升温｜晶圆进炉管或快速热处理腔，按曲线升温，气氛多为氮气等惰性气体。","保温扩散/修复｜高温下杂质原子借热运动扩散，晶格损伤逐步愈合，杂质占据晶格位置被激活。","时间控制｜扩散深度大致随时间平方根走，时间就是深度的主要旋钮。","受控降温｜降温太快会引入应力甚至滑移，要按曲线慢慢来。","电性复测｜量片电阻和结深，确认激活效果，再放行下一站。"],
+ equip:"扩散炉 / 快速热处理机（RTP）",parts:"炉管或单片加热腔、卤素灯阵列（RTP）、测温热电偶/高温计、气氛控制",
+ params:[["温度","退火常见约 900–1100°C 量级；RTP 用秒级升温，只给必要的热预算"],["热预算","温度×时间的总账：够激活杂质，又不能让已做好的浅结扩散过头"],["时间","炉管以分钟到小时计，RTP 以秒计——先进制程怕热预算，多用 RTP"],["气氛","惰性气氛防氧化、防污染，个别工艺会带少量特定气体"]],
+ defects:[["扩散过度","结变深、杂质跑位，相邻器件互相影响，短沟道效应恶化"],["激活不足","杂质没占上晶格位置，电阻偏高，器件性能不达标"],["热应力滑移","升降温太猛产生位错，成为漏电通道"],["表面沾污扩散入体","高温会把表面污染也「送」进硅里，所以退火前必须洗净"]],
+ metro:"四探针量片电阻看激活程度、抽测结深；判定逻辑：电阻回到目标且均匀，说明损伤修复了、杂质也激活了。",
+ tip:"口诀：注入负责「打进去」，退火负责「安顿好」。没退火的注入等于杂质在硅里「躺平」，不导电还添乱。扩散则记住：时间翻倍，深度只涨约四成（平方根关系）。",
+ prod:"先进逻辑热预算最紧（浅结经不起折腾），RTP 是主力。DRAM 电容等结构对热历史同样敏感；较老的成熟制程才大量用长时间炉管扩散。",
+ rel:"永远跟在离子注入后面出现。顺序是：开窗口（氧化/光刻）→ 注入 → 退火 → 量电阻确认，然后才敢往下走。",
+ quiz:{q:"离子注入之后为什么必须退火？",opts:["为了把晶圆烘干","修复晶格损伤并激活杂质，让它真正导电","给晶圆上色便于识别","退火只是习惯，可以省"],a:1,exp:"注入把晶格撞伤、杂质也只是塞在缝隙里。退火让晶格愈合、杂质坐上晶格位置，导电性才成立。"},
+ xb:[[SUB[0],SUB[1]],["掺杂区（晶格损伤·未激活）","#c4b3e0"]],xa:[[SUB[0],SUB[1]],["掺杂区（已修复·已激活）","#9a7fc0"]]},
+{key:"dep",nm:"薄膜沉积",en:"Deposition · CVD/PVD/ALD",cat:"薄膜与互连",purpose:"在晶圆上「长」出一层新材料：绝缘的氧化硅/氮化硅、导电的金属、多晶硅等。盖楼先得有楼板——每一层新结构都从一次沉积开始。三大流派：CVD 化学反应长膜、PVD 物理溅射镀膜、ALD 一层原子一层原子地铺。",
+ inp:"表面洁净、状态受控的晶圆（可能已有图形和台阶）。",outp:"表面多了一层成分、厚度可控的新薄膜，覆盖住下面的结构，等待光刻和蚀刻加工。",
+ steps:["进腔准备｜晶圆送入反应腔，抽真空、加热到工艺温度，气氛稳定下来。","送入原料｜CVD 通前驱气体；PVD 在真空中用等离子轰击靶材；ALD 则交替通两种前驱体，中间用惰性气体吹扫。","成膜反应｜CVD 气体在表面化学反应生成固体膜；PVD 靶材原子飞落到表面；ALD 每次只自限制地长一个原子层。","厚度控制｜靠时间（CVD/PVD）或循环次数（ALD）控制厚度，同时盯均匀性和台阶覆盖。","冷却出腔 + 量测｜量膜厚、均匀性和应力，合格后送光刻进行下一轮图形化。"],
+ equip:"CVD 炉/腔体、PVD 溅射机、ALD 机台",parts:"喷淋头（Showerhead）、真空泵组、射频电源、靶材（PVD）、前驱体输送与吹扫阀（ALD）、加热台",
+ params:[["膜厚与均匀性","从几纳米到微米量级都有；整片厚薄一致是硬指标"],["温度","CVD 常见数百 °C；ALD 窗口更窄，温度不对自限制就失效"],["台阶覆盖性","有台阶/深孔时膜能不能均匀包住：ALD 最好、CVD 次之、PVD 最弱"],["应力","膜自己会「拉」或「压」晶圆，应力过大晶圆翘曲、膜会裂"]],
+ defects:[["膜厚漂移","整批厚度系统性偏移，后续蚀刻和电性一起受影响"],["颗粒/针孔","腔体掉颗粒进膜里，针孔让上下层不该通的地方通了"],["台阶覆盖差","深孔侧壁没膜或太薄，互连断在台阶上"],["膜开裂/剥落","应力过大或附着差，膜自己掀起来，连带下面结构一起完蛋"],["成分不纯","前驱体分解不完全，膜里夹了杂质，绝缘性或电阻不达标"]],
+ metro:"椭偏/反射仪量膜厚与均匀性、抽测应力与成分，缺陷扫描查颗粒。判定逻辑：厚度在窗口、均匀性达标、无致命缺陷，才放行去光刻。",
+ tip:"三兄弟速记：CVD 是「化学反应下雪」，快而全能；PVD 是「喷漆式溅射」，金属膜常用、怕台阶；ALD 是「一层原子刷一遍」，最慢但最均匀、深孔救星。要在深孔里均匀包膜，找 ALD。",
+ prod:"3D NAND 靠沉积叠出上百层，对膜厚一致性和应力最敏感。逻辑制程的栅极高 K 膜多用 ALD 求均匀。HBM 的 TSV 孔内壁绝缘和种子层，也离不开覆盖性好的沉积。",
+ rel:"沉积和蚀刻是叠层的两只手：沉积加一层、光刻定图形、蚀刻挖形状、CMP 磨平，然后再沉积下一层。金属互连的阻挡层/种子层也由沉积打底，再交给电镀长厚。",
+ quiz:{q:"要在一个很深的孔内壁上均匀包一层薄膜，优先选哪种沉积？",opts:["PVD 溅射","CVD","ALD，逐原子层自限制生长","哪种都行，孔底不用包"],a:2,exp:"ALD 每轮只长一个原子层且自限制，深孔里外长得一样厚，台阶覆盖最好；PVD 是直线飞行，孔底和侧壁最吃亏。"},
+ xb:[[SUB[0],SUB[1]],["已有结构（带台阶）","#8a9ba5"]],xa:[[SUB[0],SUB[1]],["已有结构（带台阶）","#8a9ba5"],["新沉积薄膜（均匀覆盖）","#4aa3a2"]]}
+];
+LEARN.push(
+{key:"cmp",nm:"CMP 平坦化",en:"CMP",cat:"薄膜与互连",purpose:"化学机械抛光：一边用研磨液起化学作用，一边用抛光垫机械摩擦，把晶圆表面磨平。层数越叠越高，不磨平，下一层光刻就对不准焦、套不准。",
+ inp:"刚沉积或电镀完、表面高低不平的晶圆。",outp:"表面平整到可以继续下一层光刻的晶圆，多余材料被精确去除到目标厚度。",
+ steps:["上片压紧｜晶圆被载具压到旋转的抛光垫上，研磨液持续供到垫面。","化学+机械去除｜研磨液先把表面材料化学软化/氧化，抛光垫和磨粒随即把它磨掉，两者缺一不可。","分区加压控制｜不同区域压力可调，照顾中心与边缘去除速率的差异。","终点判定｜靠摩擦/光学信号或定时判断磨到位，停在目标面——多磨就是碟形凹陷。","清洗干燥｜抛光后的晶圆满身研磨液和颗粒，必须立刻刷洗干净再干燥。"],
+ equip:"CMP 抛光机 + 后清洗机",parts:"抛光垫、研磨液（Slurry）供给、抛光头/载具、修整器（Conditioner）、终点检测",
+ params:[["去除速率","磨得快不快，由压力、转速和研磨液共同决定；快不等于好，要稳"],["平坦度/不平整度","磨完表面高低差越小越好，直接决定下一层光刻的焦深余量"],["选择比","磨目标材料快、磨到停止层就慢下来，选择比高才停得住"],["缺陷密度","划痕和残留颗粒是 CMP 的头号扣分项"]],
+ defects:[["划痕","垫子状态差或大颗粒混入，划伤表面——跟批时那通 CMP 来电说的就是它，伤口可能切断细线"],["碟形凹陷 Dishing","宽金属线区域被多磨出一个碟子，线变薄、电阻变大"],["侵蚀 Erosion","密集图形区整体被多磨低一截，平坦化失败"],["研磨液残留/颗粒","洗不净带到下一站，成为污染和缺陷源"],["平坦度不足","表面还起伏，下一层光刻失焦，整片 CD 发散"]],
+ metro:"量剩余膜厚和片内均匀性、测表面平坦度、缺陷扫描数划痕和颗粒。判定逻辑：厚度到目标、平坦度达标、划痕颗粒不超限，三者齐了才放行。",
+ tip:"易混点：CMP≠普通打磨。它是「化学先软化、机械再去除」的配合，纯机械硬磨只会满面划痕。口诀：先化后磨，磨完必洗。",
+ prod:"逻辑制程每层铜互连后都要 CMP，次数最多。3D NAND 的关键平坦化节点少但要求高。DRAM 的电容和接触孔周边平整度直接影响后续对准。",
+ rel:"CMP 是多层互连的「层间整平工」：沉积/电镀长出新层 → CMP 磨平 → 下一层光刻。没有它，楼盖不过三层就会歪到没法对焦。",
+ quiz:{q:"CMP 中抛光垫状态变差，最先冒出来的典型缺陷是？",opts:["套刻偏移","表面划痕变多","膜厚变厚","离子打偏了"],a:1,exp:"垫子老化或藏了大颗粒，会直接在晶圆上拉出划痕。抽检划痕变多，先怀疑垫子和研磨液，而不是先调时间。"},
+ xb:[[SUB[0],SUB[1]],["起伏不平的材料层","#c97b4a"]],xa:[[SUB[0],SUB[1]],["平坦化后的材料层","#74a874"]]},
+{key:"metal",nm:"电镀 / 金属互连",en:"Electroplating & Interconnect",cat:"薄膜与互连",purpose:"给晶体管们「拉电线」：先沉积阻挡层和种子层，再电镀铜把沟槽和通孔填满，形成一层金属连线；一层连完 CMP 磨平，再叠下一层。",
+ inp:"已由沉积+光刻+蚀刻做好沟槽/通孔图形、内壁有阻挡层和铜种子层的晶圆。",outp:"沟槽被铜填满、表面磨平后，一层金属互连成形，晶体管之间通上电。",
+ steps:["阻挡层+种子层｜先沉积一层薄阻挡层防铜扩散进硅，再沉积铜种子层当电镀的导电底。","电镀填铜｜晶圆浸入镀液通电，铜离子在种子层上还原沉积，由下往上把沟槽填实，不能留空洞。","退火稳定｜镀完的铜要退火让晶粒长大、电阻降下来并稳定。","CMP 去多余铜｜把表面多余的铜和阻挡层磨掉，只留下沟槽里的铜线——这就是大马士革工艺。","叠下一层｜沉积层间绝缘膜，重复光刻、刻孔、电镀、CMP，一层层把「立交桥」搭上去。"],
+ equip:"电镀机（ECD）+ 配套沉积/CMP",parts:"镀液槽与添加剂系统、阳极、整流电源、旋转载具、退火腔",
+ params:[["填充能力","沟槽越窄越深，越容易在口上先封死留空洞——添加剂就是来解决这个的"],["铜电阻率","晶粒越大电阻越低，退火质量直接写在电性上"],["均匀性","整片镀得一样厚，CMP 才好收尾"],["阻挡层完整性","铜一旦扩散进硅是剧毒污染，阻挡层不能有破口"]],
+ defects:[["空洞/缝隙","沟槽里没填实，电线中间是空的，通电发热后迟早断路"],["表面铜残留","CMP 没磨净，相邻线之间被残铜连上，短路"],["阻挡层破口","铜扩散污染硅，器件漏电、寿命骤减"],["镀层粗糙/结节","局部电流过大长出疙瘩，CMP 和后续层都受影响"]],
+ metro:"量测铜线电阻和片内均匀性、X 光/剖面抽查填充有无空洞、CMP 后查残留。判定逻辑：电阻在窗口、无空洞无残留，才算这一层互连合格。",
+ tip:"口诀：先铺种子，再镀填满，磨平收尾。记住铜互连是「填」出来的（大马士革），不是刻出来的——和蚀刻正好反着来。",
+ prod:"逻辑制程互连层数最多（十几层不稀奇），线宽最细，电镀填充和 CMP 循环次数称王。HBM 的 TSV 是加粗版通孔填充，原理相通但尺寸大得多。存储相对层数少一些，但位线/字线的电阻控制同样关键。",
+ rel:"它站在沉积、光刻、蚀刻、CMP 的肩膀上：一层互连 = 沉积绝缘层 → 光刻刻孔 → 沉积阻挡/种子 → 电镀填铜 → CMP 磨平，然后整套再来一遍。",
+ quiz:{q:"铜互连里阻挡层是干什么的？",opts:["让铜更好看","防止铜扩散进硅里造成污染","帮助铜长得更快","代替种子层导电"],a:1,exp:"铜对硅是剧毒污染，会毁掉器件。阻挡层把铜和硅/绝缘层隔开；种子层才是给电镀导电打底的那层，别把两者记混。"},
+ xb:[[SUB[0],SUB[1]],["绝缘层（沟槽/通孔已刻好）","#8a9ba5"]],xa:[[SUB[0],SUB[1]],["绝缘层（沟槽/通孔已刻好）","#8a9ba5"],["铜互连线（已填满磨平）","#c97b4a"]]},
+{key:"wtest",nm:"晶圆测试",en:"Wafer Test / CP",cat:"测试与后段",purpose:"晶圆还是一整片时，用探针卡扎到每颗 Die 的焊盘上通电测试，先把坏 Die 标记出来——不让坏芯片混进昂贵的封装环节。",
+ inp:"前段制程全部完成、表面有完整焊盘的整片晶圆。",outp:"一张晶圆图（Wafer Map）：好 Die、坏 Die 一目了然，坏的打上标记，后段只封装好的。",
+ steps:["上片对准｜晶圆固定在探针台上，光学对准每颗 Die 的位置。","扎针接触｜探针卡落下，几百上千根针同时扎到焊盘上，接触电阻先自检。","电性测试｜按测试程序逐项测：通断、漏电、功能、速度分档，一颗 Die 几秒到几十秒。","标记坏 Die｜不合格的 Die 在 Wafer Map 上标记（墨点或电子图），数据同步给后段。","分选下片｜整片测完，良率数据回传前段——哪一站出问题，先看这张图的坏 Die 分布长什么样。"],
+ equip:"探针台（Prober）+ 测试机（Tester）",parts:"探针卡、探针台 Chuck、测试机测试头、温控系统（可做高低温测试）",
+ params:[["接触质量","针没扎好会把好 Die 误判成坏的，接触自检是第一关"],["测试覆盖率","测的项目越全，漏网的坏 Die 越少，但时间和成本越高"],["良率分布形态","坏 Die 是随机散布、边缘成圈还是成片聚集，形态本身就是前段问题的指纹"],["温度条件","常温测和高温测筛出的坏 Die 不一样，车规等产品更严"]],
+ defects:[["探针划伤焊盘","针压过大或对位偏，焊盘被扎坏，后面键合不上"],["误测（接触不良）","好 Die 被误杀，良率虚低，复测才发现是冤案"],["坏 Die 漏检","测试项不够，坏芯片流到封装甚至客户端——最贵的一种错"],["边缘良率塌方","整圈坏 Die 多半指向某站的片内均匀性问题，要回头查前段"]],
+ metro:"这一站本身就是量测：看总良率、看 Wafer Map 形态、抽测复测一致性。判定逻辑：良率达到出货门槛、坏 Die 分布没有异常聚集形态，才能放行去切割封装；有聚集形态先通知前段查根因。",
+ tip:"记忆点：Wafer Map 会「说话」。随机坏点多半是颗粒，边缘成圈是均匀性，成片聚集是某站局部异常——看图定位，是整合工程师的基本功。",
+ prod:"逻辑芯片 Die 大、测试项多、时间长，测试成本占比高；存储要逐颗测存储单元，另有修复（冗余替换）环节；HBM 在堆叠前测（Known Good Die）尤其重要，叠上去再发现坏的，整叠报废。",
+ rel:"它是前段和后段的分水岭：前面所有工艺的好坏，最终在这一站的 Wafer Map 上集中揭晓；它的数据又反过来指导前段哪一站该调整。",
+ quiz:{q:"Wafer Map 上坏 Die 沿晶圆边缘成一圈，最可能指向什么问题？",opts:["测试员心情不好","某道工序的片内均匀性差（边缘和中心处理不一致）","掩模版画错了","探针卡太贵了"],a:1,exp:"成圈、成片这类有形态的失效，多半是工艺均匀性问题；随机散布的坏点才更像颗粒污染。看形态找根因。"},
+ xb:[[SUB[0],SUB[1]],["器件层（整片待测 Die）","#5b84ae"]],xa:[[SUB[0],SUB[1]],["器件层（坏 Die 已标记）","#5b84ae"],["测试标记（坏 Die 墨点图）","#d64541"]]},
+{key:"dice",nm:"切割",en:"Dicing",cat:"测试与后段",purpose:"把整片晶圆沿切割道切成一颗颗独立的 Die。切得干净利落，后面封装才顺；切崩了边，好芯片也变废品。",
+ inp:"已完成晶圆测试、坏 Die 已标记的整片晶圆（贴在切割膜上）。",outp:"一颗颗分离但仍排布整齐的 Die，好的挑走封装，坏的直接淘汰。",
+ steps:["贴膜上框｜晶圆背面贴上切割膜并固定在金属框架上，切完 Die 不会散落。","对准切割道｜光学对准 Die 之间的切割道（街道），确认刀路不压图形区。","金刚石刀轮切割｜高速旋转的薄刀轮沿切割道逐条切透（或激光开槽+刀切组合）。","清洗干燥｜冲掉切割碎屑和硅粉，干燥后检查崩边。","挑片准备｜切好的 Die 连膜送去挑拣：好 Die 被顶起、吸取，送封装。"],
+ equip:"切割机（Dicing Saw）",parts:"金刚石刀轮、主轴、切割台、切割液喷嘴、对准相机",
+ params:[["刀轮转速与进给","转速高、进给慢切得细，但产能低；要平衡质量和速度"],["切割道宽度","道越窄，能排的 Die 越多，但给切割的容错也越小"],["崩边尺寸","切口边缘崩缺的大小，崩进图形区这颗 Die 就废了"],["切割液","冷却加冲屑，断液一小会儿刀口就会糊住"]],
+ defects:[["崩边/裂纹","切口崩缺甚至裂纹延伸进 Die 内部，可靠性直接判死刑"],["切偏","刀路压到图形区，当场报废一排 Die"],["残屑污染","硅粉碎屑没洗净，带到封装里垫在芯片下面"],["Die 未切透/粘连","挑片时拉坏相邻好 Die"]],
+ metro:"显微检查切口崩边和对位、抽测 Die 强度。判定逻辑：崩边不进图形区、无裂纹、切透干净，才放行挑片。",
+ tip:"易混点：切割不是「剪纸」，刀轮是磨切不是剪切，所以参数围着转速、进给和冷却转。先进封装里还有激光隐形切割等玩法，目的都一样：少崩边、不伤 Die。",
+ prod:"HBM 和先进封装的晶圆会先减薄再切割，薄片更脆，崩边控制更难；大 Die 的逻辑芯片切割道长，裂纹风险更高；存储 Die 多而小，更在意产能和碎屑管理。",
+ rel:"切割紧跟晶圆测试：先测出好坏，再切开分家。切完挑走的好 Die 进入封装，坏 Die 在这一站结束旅程。",
+ quiz:{q:"切割时崩边最严重的后果是？",opts:["晶圆变轻了","裂纹延伸进 Die 内部，芯片可靠性判死刑","切割液用多了","挑片速度变慢"],a:1,exp:"崩边只要还在切割道里就是小事，一旦裂纹伸进图形区，这颗 Die 就不可靠了，必须淘汰。"},
+ xb:[[SUB[0],SUB[1]],["整片晶圆（Die 阵列+切割道）","#5b84ae"]],xa:[[SUB[0],SUB[1]],["已分离的单颗 Die（待挑拣）","#74a874"]]},
+{key:"pkg",nm:"封装",en:"Packaging",cat:"测试与后段",purpose:"给裸 Die 穿上「房子」：固定到基板/引线框架上、接出电极、用塑封料或盖板保护起来，变成能拿、能焊、能散热的成品芯片外形。",
+ inp:"切割挑出的好 Die、基板或引线框架、键合丝/凸块、塑封料。",outp:"外形完整、引脚齐整的封装体，电极从 Die 一路引到外部引脚，等待封装测试盖章。",
+ steps:["贴片 Die Attach｜用银胶或焊料把 Die 固定到基板/框架的指定位置，对位和胶厚都要控。","键合 Wire Bond / 倒装｜金线/铜线把 Die 焊盘和基板逐个连起来（或倒装用凸块一次全连），一根都不能漏、不能搭错。","塑封 Molding｜环氧塑封料把 Die 和键合线包起来，只露出外部引脚；或贴盖板做气密封装。","固化与电镀｜塑封料加热固化，引脚表面镀锡防氧化、保可焊性。","打标与成型｜激光在封装表面打上型号批次，切筋成型把连着的引脚分离成单颗。"],
+ equip:"贴片机、键合机、塑封机",parts:"点胶/贴片头、超声键合头、模具、激光打标机",
+ params:[["键合质量","拉力/推力测试定生死：线没焊牢，通电发热迟早脱开"],["胶厚与倾斜","Die 贴歪贴斜，后面键合和散热都跟着歪"],["塑封温度与压力","太低包不实留气孔，太高压坏键合线（冲丝）"],["湿气敏感等级","塑封料吸了潮，回流焊时内部水汽膨胀会爆裂（爆米花效应）"]],
+ defects:[["冲丝/断线","塑封注料把键合线冲歪冲断，整颗短路或开路"],["分层/气孔","塑封料和 Die、基板之间没粘好，水汽顺缝钻进去腐蚀"],["Die 开裂","贴片或塑封应力过大，芯片本体裂了"],["引脚共面性差","引脚不在一个平面上，焊到板子上虚焊"]],
+ metro:"X 光/超声扫描看内部键合和分层、抽测键合拉力、外观查引脚和打标。判定逻辑：内部无分层断丝、键合强度达标、外观合格，才送封装测试做最后电性裁决。",
+ tip:"口诀：贴、连、包、标——贴片、键合连线、塑封包好、打标分家。封装不是「装盒子」，它决定散热、可靠性和能不能焊上板子，含金量一点不比前段低。",
+ prod:"HBM 是封装的主场：多片 DRAM 靠 TSV 穿孔垂直堆叠再键合，堆叠对位和散热是核心难题。先进逻辑流行 Chiplet 和 2.5D/3D 封装，把多颗 Die 拼成一个系统。存储和传统产品则更看重成本与产能。",
+ rel:"封装接过切割挑出的好 Die，把它变成能用的零件；封完还要过封装测试这一关，才算真正成品。和晶圆测试的区别：那次测的是裸 Die，这次测的是成品。",
+ quiz:{q:"塑封料吸潮后过回流焊，最经典的失效叫什么？",opts:["碟形凹陷","爆米花效应：内部水汽膨胀把封装撑裂","套刻偏移","沟道效应"],a:1,exp:"水汽受热膨胀，在封装内部产生高压导致分层甚至爆裂，外形像爆米花。所以受潮的封装料要先烘烤除湿。"},
+ xb:[[SUB[0],SUB[1]],["裸 Die（待封装）","#5b84ae"]],xa:[[SUB[0],SUB[1]],["裸 Die（已贴装键合）","#5b84ae"],["塑封体（保护+引脚引出）","#33474f"]]},
+{key:"ftest",nm:"封装测试",en:"Final Test",cat:"测试与后段",purpose:"成品芯片的最后一道关：把封装好的芯片逐颗上机通电，按规格测功能、速度和功耗，分档、打标、包装出货。不合格的到此为止，不许出厂。",
+ inp:"封装完成、外观合格的成品芯片。",outp:"按性能分档的合格芯片：编带/托盘包装，贴标入库，等待出货；不合格品隔离报废。",
+ steps:["上料分选｜分选机把芯片逐颗送进测试工位，先对位再压接触座。","常温电性测试｜测通断、漏电、基本功能，坏的当场剔除。","高温/高低温测试｜按产品等级在高温（甚至低温）下再测一轮，把「热了就抽风」的挑出来。","功能与速度分档｜跑完整功能和速度测试，按性能分档（同一型号不同频率档就是这么来的）。","打标包装｜合格品激光打标对应档位，编带或入托盘，老化抽测合格后入库出货。"],
+ equip:"测试分选机（Handler）+ 测试机",parts:"接触座（Socket）、温控腔、测试机、分选轨道",
+ params:[["接触质量","Socket 接触不良会误杀好芯片，和探针测试一个道理，接触自检先行"],["测试温度","温度档位按产品规格走，车规、工控比消费级严得多"],["测试覆盖与时间","测得越全越慢，成本和把关程度要平衡"],["分档标准","速度/功耗档位线画在哪里，直接决定每个档位有多少货可卖"]],
+ defects:[["接触误测","Socket 脏了或磨损，好芯片被误判，复测一遍才昭雪"],["封装后失效","晶圆测试时是好的，封装应力/键合问题让它变坏——这类要回头查封装站"],["温度下失效","常温过关、高温露馅，多是设计余量或工艺漂移"],["混档/打标错","档位标错发出去，客户按高档用低档货，出事就是批量事故"]],
+ metro:"这一站就是最终裁决：全部测试项通过才算合格，数据按批次留存追溯。判定逻辑还要加上抽测老化（高温通电加速暴露早期失效），抽测不过，整批都要复检。",
+ tip:"易混点：晶圆测试 vs 封装测试。晶圆测试筛的是「Die 本身好不好」，图省封装钱；封装测试验的是「成品能不能用」，是出货前的最后一票。两次都过，才是真合格。",
+ prod:"逻辑旗舰芯片分档最细，速度档直接对应不同售价。车规产品要加严温度和老化。HBM 出货前还要做堆叠整体测试，单颗好不等于叠起来好。",
+ rel:"它是整条旅程的终点站：前面十三个工艺的账，在这里一次性结清。通过后芯片贴标入库，就是跟批主线里最后的「成品入库」。",
+ quiz:{q:"晶圆测试合格、封装测试却失效，最该先怀疑哪个环节？",opts:["光刻的掩模版","封装过程：键合、塑封应力等把好 Die 弄坏了","清洗的水质","切割机的刀轮颜色"],a:1,exp:"Die 在晶圆状态是好的，封装后变坏，嫌疑自然落在贴片、键合、塑封这些封装环节——这也是封装测试存在的意义。"},
+ xb:[[SUB[0],SUB[1]],["封装体（待测成品）","#33474f"]],xa:[[SUB[0],SUB[1]],["封装体（已分档打标）","#33474f"],["合格标记（分档入库）","#1e9e62"]]}
+);
+/* ================= state ================= */
+var S = { product:null, stepIdx:-1, playing:false, speed:1, timer:null, score:80, yield:96.5, callsDone:0, bnScore:0, quizScore:null, finished:false, annoyInserted:false, layers:0, learned:{}, learnMode:"seq", learnOpen:null, learnStep:0 };
+var currentFilter = "all";
+var loads = [ {nm:"光刻",v:96},{nm:"蚀刻",v:88},{nm:"沉积",v:84},{nm:"CMP",v:79},{nm:"量测",v:74},{nm:"离子注入",v:68} ];
+var toolBudget = 2, fcBoost = 0, bnPickSel = null;
+
+/* ================= helpers ================= */
+function $(id){return document.getElementById(id);}
+function toast(msg){ var t=$("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(function(){t.classList.remove("show");},2400); }
+function go(view){
+  document.querySelectorAll(".view").forEach(function(v){v.classList.remove("on");});
+  $("view-"+view).classList.add("on");
+  document.querySelectorAll(".tab").forEach(function(b){ b.classList.toggle("on", b.getAttribute("data-view")===view); });
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+document.querySelectorAll(".tab").forEach(function(b){ b.addEventListener("click",function(){ go(b.getAttribute("data-view")); }); });
+function log(msg, cls){
+  var el=$("runLog"); var d=document.createElement("div"); if(cls) d.className=cls;
+  var now=new Date(); var hh=String(now.getHours()).padStart(2,"0"), mm=String(now.getMinutes()).padStart(2,"0");
+  d.textContent="["+hh+":"+mm+"] "+msg; el.appendChild(d); el.scrollTop=el.scrollHeight;
+}
+function setScore(delta){
+  S.score=Math.max(0,Math.min(100,S.score+delta));
+  $("scoreChip").textContent=S.score; $("mScore").textContent=S.score;
+  if(delta!==0) toast((delta>0?"处置 +":"处置 ")+delta+" 分 · 当前运行分 "+S.score);
+}
+
+/* ================= products ================= */
+function renderProducts(f){
+  var g=$("pgrid"); g.innerHTML="";
+  PRODUCTS.filter(function(p){return f==="all"||p.cat===f;}).forEach(function(p){
+    var b=document.createElement("button"); b.className="pcard"+(S.product&&S.product.code===p.code?" sel":"");
+    b.innerHTML='<div class="code">'+p.code+'</div><div class="nm">'+(LANG==="en"?p.en:p.nm)+'</div><div class="ds">'+p.ds+'</div><div class="meta"><span class="tag">'+p.steps+' 步</span><span class="tag">'+p.seg+'</span>'+(p.hot?'<span class="tag hot">'+p.hot+'</span>':"")+'</div>';
+    b.addEventListener("click",function(){ selectProduct(p); });
+    g.appendChild(b);
+  });
+}
+document.querySelectorAll(".pfilter button").forEach(function(b){
+  b.addEventListener("click",function(){
+    document.querySelectorAll(".pfilter button").forEach(function(x){x.classList.remove("on");});
+    b.classList.add("on"); currentFilter=b.getAttribute("data-f"); renderProducts(currentFilter);
+  });
+});
+function selectProduct(p){
+  S.product=p; renderProducts(currentFilter);
+  $("pickDetail").innerHTML='<div style="background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px"><b style="font-size:16px">'+p.nm+'</b> <span class="sub">'+p.code+' · 全流程 '+p.steps+' 步（'+p.seg+'）</span><p class="sub" style="margin:6px 0 12px">将发放批次 <b>Lot A235</b>（25 片装 FOUP），你跟着它跑完 12 个演示站点（对应全流程 '+p.steps+' 步），途中 EE / PE 会来电，处置对错实时计分。</p><button class="btn big" id="btnStart">🚀 发放批次 Lot A235，开始跟随</button></div>';
+  $("btnStart").addEventListener("click",startRun);
+  $("pickDetail").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+
+/* ================= run ================= */
+function startRun(){
+  if(!S.product) return;
+  S.stepIdx=-1; S.playing=true; S.finished=false; S.score=80; S.yield=96.5; S.callsDone=0; S.annoyInserted=false; S.layers=0;
+  $("scoreChip").textContent=80; $("runEmpty").classList.add("hidden"); $("runMain").classList.remove("hidden");
+  $("xsec").innerHTML='<div class="xlayer" style="background:#6b7f88">硅衬底 Substrate<small>一切的地基</small></div>';
+  $("runLog").innerHTML=""; $("runDot").classList.remove("hidden");
+  $("mLot").textContent="Lot A235"; $("lotName").textContent="Lot A235 · "+S.product.nm; $("mProd").textContent=S.product.nm+"（"+S.product.steps+" 步）";
+  $("mHold").textContent="正常"; $("mScore").textContent=80;
+  log("批次 Lot A235 发放："+S.product.nm+"，全流程 "+S.product.steps+" 步，演示跟批开始。","ok");
+  log("AMHS 天车已取片，FOUP 前往第一站。");
+  go("run"); nextStep(); schedule();
+}
+function schedule(){ clearInterval(S.timer); S.timer=setInterval(function(){ if(S.playing) nextStep(); }, 2600/S.speed); }
+function nextStep(){
+  if(S.finished) return;
+  // check call trigger before advancing beyond point
+  S.stepIdx++;
+  if(S.stepIdx>=STATIONS.length){ finishRun(); return; }
+  var st=STATIONS[S.stepIdx];
+  // position dot along path
+  var path=$("lotPath"), dot=$("lotDot"), L=path.getTotalLength();
+  var frac=S.stepIdx/(STATIONS.length-1); var pt=path.getPointAtLength(L*Math.min(1,frac));
+  dot.setAttribute("transform","translate("+pt.x+","+pt.y+")");
+  // station card
+  $("stTitle").textContent="当前站点："+st.nm;
+  $("stSub").textContent="演示站 "+(S.stepIdx+1)+" / "+STATIONS.length+" · 对应全流程约第 "+Math.round(S.product.steps*frac)+" 步";
+  $("stStage").innerHTML=stationSVG(st.key);
+  $("stPrinciple").innerHTML=st.principle;
+  renderStationLearn(st.key);
+  // cross-section layer
+  if(st.layer){ var d=document.createElement("div"); d.className="xlayer"; d.style.background=st.layer.c; d.innerHTML=st.layer.t+"<small>"+st.layer.note+"</small>"; $("xsec").appendChild(d); S.layers++; }
+  // MES
+  var total=S.product.steps, done=Math.round(total*frac);
+  $("mCur").textContent=st.nm; $("mStep").textContent=done+" / "+total;
+  $("mDone").textContent=done; $("mLeft").textContent=STATIONS.length-S.stepIdx-1;
+  var remainMin=Math.round((1-frac)*S.product.steps*0.11);
+  $("mEta").textContent=remainMin>60? (Math.floor(remainMin/60)+" 小时 "+(remainMin%60)+" 分") : remainMin+" 分钟";
+  $("etaTxt").textContent="预计剩余 "+$("mEta").textContent;
+  S.yield=Math.max(88,Math.min(99.2, S.yield + (Math.random()*1.6-0.9)));
+  $("mYield").textContent=S.yield.toFixed(1)+"%";
+  $("progBar").value=Math.round(frac*100); $("progTxt").textContent=Math.round(frac*100)+"% · "+st.nm;
+  document.querySelectorAll("#flowbar .seg").forEach(function(sg){
+    var ph=+sg.getAttribute("data-ph"); sg.className="seg";
+    var curPh = frac<0.78?0:(frac<1?1:2);
+    if(ph<curPh) sg.classList.add("done"); if(ph===curPh) sg.classList.add("now");
+    if(S.stepIdx>=STATIONS.length-1 && ph<=1) sg.classList.add("done");
+    if(st.key==="done"){ sg.classList.add("done"); }
+  });
+  log("到达站点："+st.nm+"（"+done+"/"+total+" 步）");
+  // call triggers
+  var callIdx=CALLS.findIndex(function(c){return c.at===S.stepIdx;});
+  if(callIdx>=0){ setTimeout(function(){ openCall(CALLS[callIdx], false); },900); }
+  if($("annoyToggle").checked && !S.annoyInserted && S.stepIdx===5){
+    S.annoyInserted=true; setTimeout(function(){ openCall(ANNOY_CALLS[0], true); }, 3400);
+  }
+  if($("annoyToggle").checked && S.stepIdx===9 && S.annoyInserted){
+    setTimeout(function(){ if(!S.finished) openCall(ANNOY_CALLS[1], true); }, 3600);
+  }
+}
+function finishRun(){
+  S.finished=true; S.playing=false; clearInterval(S.timer);
+  $("progBar").value=100; $("progTxt").textContent="100% · 成品入库 ✓";
+  $("mHold").textContent="已完工"; $("runDot").classList.add("hidden");
+  log("批次 Lot A235 完工入库，最终良率 "+S.yield.toFixed(1)+"%。","ok");
+  toast("🎉 批次跑完了！去「测验结算」看总分");
+  go("quiz"); computeResult();
+}
+$("btnPlay").addEventListener("click",function(){
+  S.playing=!S.playing; this.textContent=S.playing?"⏸ 暂停":"▶ 继续"; if(S.playing) schedule();
+});
+document.querySelectorAll(".spd").forEach(function(b){
+  b.addEventListener("click",function(){
+    document.querySelectorAll(".spd").forEach(function(x){x.classList.remove("on");});
+    b.classList.add("on"); S.speed=+b.getAttribute("data-sp"); if(S.playing) schedule();
+  });
+});
+$("btnStep").addEventListener("click",function(){ if(!S.finished){ S.playing=false; $("btnPlay").textContent="▶ 继续"; nextStep(); } });
+
+/* ================= calls ================= */
+var currentCall=null, currentIsAnnoy=false;
+function openCall(call, isAnnoy){
+  if($("callOverlay").classList.contains("show")) return;
+  currentCall=call; currentIsAnnoy=isAnnoy;
+  S.playing=false; $("btnPlay").textContent="▶ 继续";
+  $("mHold").textContent="⚠ Hold 中（来电处置）";
+  var av=$("callAvatar"); av.textContent=call.av; av.className="avatar "+call.role;
+  $("callWho").textContent=call.who;
+  $("callStat").textContent = isAnnoy ? "📱 来电中…（这通好像不太正经）" : "📱 来电中… 批次已自动 Hold，先别让它往下跑";
+  $("ringZone").classList.remove("hidden"); $("talkZone").classList.add("hidden");
+  av.classList.add("vibe");
+  $("callOverlay").classList.add("show");
+  if(navigator.vibrate) navigator.vibrate([120,60,120]);
+  log("来电："+call.who+" —— 批次 Hold，等待处置。","warn");
+}
+$("btnAnswer").addEventListener("click",function(){
+  $("callAvatar").classList.remove("vibe");
+  $("ringZone").classList.add("hidden"); $("talkZone").classList.remove("hidden");
+  $("talkWho").textContent=currentCall.who;
+  var m=$("callMsg"); m.textContent=currentCall.msg; m.classList.add("show");
+  var decs=$("callDecs"); decs.innerHTML=""; $("callFb").className="callfb"; $("btnHangup").classList.add("hidden");
+  currentCall.decs.forEach(function(d){
+    var b=document.createElement("button"); b.textContent=d.t;
+    b.addEventListener("click",function(){
+      decs.querySelectorAll("button").forEach(function(x){x.disabled=true;});
+      setScore(d.pts);
+      var fb=$("callFb"); fb.className="callfb show "+d.fb;
+      fb.textContent=(d.pts>0?"✅ +":"⚠ ")+d.pts+" 分 · "+d.why;
+      fb.style.display="block";
+      $("btnHangup").classList.remove("hidden");
+      if(!currentIsAnnoy) S.callsDone++;
+      log("处置（"+currentCall.who+"）："+d.t+"（"+(d.pts>0?"+":"")+d.pts+" 分）", d.pts>=0?"ok":"bad");
+    });
+    decs.appendChild(b);
+  });
+});
+$("btnDecline").addEventListener("click",function(){
+  $("callAvatar").classList.remove("vibe");
+  setScore(-6); log("你挂断了 "+currentCall.who+" 的电话（-6 分）。问题不会因为没接电话就消失。","bad");
+  closeCall();
+});
+$("btnHangup").addEventListener("click",closeCall);
+function closeCall(){
+  $("callOverlay").classList.remove("show");
+  $("mHold").textContent="正常";
+  if(!S.finished){ S.playing=true; $("btnPlay").textContent="⏸ 暂停"; schedule(); }
+}
+
+/* ================= dashboard / bottleneck ================= */
+function renderLoads(){
+  var el=$("loadList"); el.innerHTML="";
+  loads.forEach(function(s){
+    var cls=s.v>=92?"hot":(s.v>=82?"mid":"");
+    var row=document.createElement("div"); row.className="loadrow";
+    row.innerHTML='<span><b>'+s.nm+'</b></span><div class="loadbar"><i class="'+cls+'" style="width:'+s.v+'%"></i></div><span>'+s.v+'%</span>';
+    el.appendChild(row);
+  });
+  var pk=$("bnPick"); pk.innerHTML="";
+  loads.forEach(function(s){
+    var b=document.createElement("button"); b.textContent=s.nm+" "+s.v+"%";
+    if(bnPickSel===s.nm) b.classList.add("sel");
+    b.addEventListener("click",function(){ bnPickSel=s.nm; renderLoads(); $("btnAddTool").disabled = toolBudget<=0; });
+    pk.appendChild(b);
+  });
+  $("toolBudget").textContent="剩余加机预算："+toolBudget+" 台";
+  drawForecast();
+}
+function drawForecast(){
+  var base=[1720,1730,1725,1740,1735,1750,1745,1755,1750,1760,1758,1765];
+  var act=base.map(function(v,i){ return Math.round(v + fcBoost*(i+1)*9); });
+  var max=2100, min=1600;
+  function pts(arr){ return arr.map(function(v,i){ var x=30+i*(500/11); var y=150-(v-min)/(max-min)*130; return x.toFixed(0)+","+y.toFixed(0); }).join(" "); }
+  var grid=""; [1650,1800,1950,2100].forEach(function(v){ var y=150-(v-min)/(max-min)*130; grid+='<line x1="30" y1="'+y+'" x2="530" y2="'+y+'" stroke="#c3ced2" stroke-width="1"/><text x="2" y="'+(y+4)+'" font-size="10" fill="#5b6d75">'+v+'</text>'; });
+  $("fcChart").innerHTML='<svg viewBox="0 0 540 175" style="width:100%;height:auto" role="img" aria-label="12周产出预测折线图">'+grid+'<polyline points="'+pts(base)+'" fill="none" stroke="#9db2ba" stroke-width="2.5" stroke-dasharray="5 4"/><polyline points="'+pts(act)+'" fill="none" stroke="#2563eb" stroke-width="3"/><text x="30" y="170" font-size="10" fill="#5b6d75">第1周</text><text x="490" y="170" font-size="10" fill="#5b6d75">第12周</text><text x="360" y="26" font-size="11" fill="#2563eb" font-weight="700">处置后 周产出（片）</text></svg>';
+}
+$("btnAddTool").addEventListener("click",function(){
+  if(!bnPickSel || toolBudget<=0) return;
+  var bottleneck=loads.reduce(function(a,b){return b.v>a.v?b:a;},loads[0]);
+  var fb=$("bnFb"); fb.classList.add("show");
+  if(bnPickSel===bottleneck.nm){
+    bottleneck.v-=18; fcBoost++; toolBudget--; S.bnScore=Math.min(20,S.bnScore+10);
+    var nb=loads.reduce(function(a,b){return b.v>a.v?b:a;},loads[0]);
+    fb.className="feedback show good";
+    fb.textContent="✅ 选对了！"+bottleneck.nm+"是当前瓶颈。加机后它的负载降到 "+bottleneck.v+"%，产出预测上修。但注意：瓶颈已经转移到「"+nb.nm+"」（"+nb.v+"%）——"+(toolBudget>0?"还有预算，再处置一次试试。":"预算用完了，这就是整合工程师的日常：永远在追下一个瓶颈。");
+    $("dOut").textContent=(1730+fcBoost*95).toLocaleString();
+    $("dCT").textContent=(62-fcBoost*4)+" 天";
+    log && null;
+  } else {
+    fb.className="feedback show bad";
+    fb.textContent="❌ 「"+bnPickSel+"」不是瓶颈（它才 "+loads.find(function(s){return s.nm===bnPickSel;}).v+"%）。给非瓶颈站加机台，产出纹丝不动——钱花了，线没快。先看负载条：最高的那根才是瓶颈（"+bottleneck.nm+" "+bottleneck.v+"%）。";
+    S.bnScore=Math.max(0,S.bnScore-3);
+  }
+  bnPickSel=null; renderLoads();
+});
+renderLoads();
+
+/* ================= learn library UI ================= */
+function learnByKey(k){ return LEARN.find(function(m){return m.key===k;}); }
+function xsecHTML(layers){
+  var h='<div class="xsec" style="margin-top:0">';
+  layers.forEach(function(L){ h+='<div class="xlayer" style="background:'+L[1]+'">'+L[0]+'</div>'; });
+  return h+'</div>';
+}
+function learnProgress(){
+  var n=LEARN.filter(function(m){return S.learned[m.key];}).length;
+  $("learnBar").style.width=Math.round(n/LEARN.length*100)+"%";
+  $("learnProgTxt").textContent="已学完 "+n+" / "+LEARN.length+" 个工艺"+(n===LEARN.length?" · 全部学完，去测验区冲 80 分解锁彩蛋吧 🎉":"");
+  $("learnDot").classList.toggle("hidden", n>=LEARN.length);
+}
+function renderLearnList(){
+  var el=$("learnList"); el.innerHTML="";
+  function card(m,i){
+    var b=document.createElement("button"); b.className="lcard";
+    b.innerHTML='<div class="no">第 '+(i+1)+' 站 · '+m.cat+'</div><div class="nm">'+m.nm+'</div><div class="ds">'+m.purpose.slice(0,52)+'…</div><div class="meta" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><span class="tag">'+m.en+'</span>'+(S.learned[m.key]?'<span class="done-badge">✓ 已学完</span>':'<span class="tag">未学</span>')+'</div>';
+    b.addEventListener("click",function(){ openLearn(m.key); });
+    return b;
+  }
+  if(S.learnMode==="seq"){
+    var g=document.createElement("div"); g.className="lgrid";
+    LEARN.forEach(function(m,i){ g.appendChild(card(m,i)); });
+    el.appendChild(g);
+  } else {
+    var cats=[]; LEARN.forEach(function(m){ if(cats.indexOf(m.cat)<0) cats.push(m.cat); });
+    cats.forEach(function(c){
+      var h=document.createElement("div"); h.className="lcat"; h.textContent="🗂 "+c; el.appendChild(h);
+      var g=document.createElement("div"); g.className="lgrid";
+      LEARN.forEach(function(m,i){ if(m.cat===c) g.appendChild(card(m,i)); });
+      el.appendChild(g);
+    });
+  }
+  learnProgress();
+}
+$("modeSeq").addEventListener("click",function(){ S.learnMode="seq"; $("modeSeq").classList.add("on"); $("modeMod").classList.remove("on"); renderLearnList(); });
+$("modeMod").addEventListener("click",function(){ S.learnMode="mod"; $("modeMod").classList.add("on"); $("modeSeq").classList.remove("on"); renderLearnList(); });
+function openLearn(key){
+  S.learnOpen=key; S.learnStep=0; go("learn"); renderLearnDetail();
+  setTimeout(function(){ var d=$("learnDetail"); if(d) d.scrollIntoView({behavior:"smooth"}); },60);
+}
+function renderLearnDetail(){
+  var m=learnByKey(S.learnOpen); if(!m) return;
+  var idx=LEARN.indexOf(m);
+  var next=LEARN.slice(idx+1).find(function(x){return !S.learned[x.key];}) || LEARN[idx+1] || null;
+  var params=m.params.map(function(p){return '<tr><td>'+p[0]+'</td><td>'+p[1]+'</td></tr>';}).join("");
+  var defects=m.defects.map(function(d){return '<li><b>'+d[0]+'</b>：'+d[1]+'</li>';}).join("");
+  var stepBtns=m.steps.map(function(s,i){ return '<button data-ls="'+i+'" class="'+(i===S.learnStep?"on":"")+'">第 '+(i+1)+' 步</button>'; }).join("");
+  var curLayers = S.learnStep===0 ? m.xb : (S.learnStep>=m.steps.length-1 ? m.xa : m.xb.concat(m.xa.slice(m.xb.length)));
+  var h='<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap"><div><h2>'+(idx+1)+'. '+m.nm+' <span class="sub">'+m.en+'</span></h2><p class="sub">'+m.cat+' · 第 '+(idx+1)+' 站 / 共 '+LEARN.length+' 站</p></div>'+(S.learned[m.key]?'<span class="done-badge" style="font-size:13px;padding:5px 12px">✓ 已学完</span>':'')+'</div>'
+    +'<p style="margin-top:10px"><b>这一站在做什么：</b>'+m.purpose+'</p>'
+    +'<div class="io2"><div class="cell"><b>⬅ 输入（进来时什么样）</b>'+m.inp+'</div><div class="cell"><b>➡ 输出（出去时什么样）</b>'+m.outp+'</div></div>'
+    +'<h3 style="margin-top:16px">流程分解 · 点步骤看剖面怎么变</h3><div class="stepper">'+stepBtns+'</div>'
+    +'<div class="stepdesc" id="lStepDesc"></div>'
+    +'<div style="margin-top:10px"><div class="xcol"><div class="cap">晶圆剖面 · 随步骤变化</div><div id="lStepXsec"></div></div></div>'
+    +'<div class="xcompare" style="margin-top:10px"><div class="xcol"><div class="cap">处理前</div>'+xsecHTML(m.xb)+'</div><div class="xcol"><div class="cap">处理后</div>'+xsecHTML(m.xa)+'</div></div>'
+    +'<details class="lsec" open><summary>🔧 代表设备与关键部件</summary><div class="in"><p><b>代表设备：</b>'+m.equip+'</p><p><b>关键部件：</b>'+m.parts+'</p></div></details>'
+    +'<details class="lsec"><summary>🎛 关键工艺参数（通用概念）</summary><div class="in"><table class="ptable">'+params+'</table></div></details>'
+    +'<details class="lsec"><summary>⚠ 常见缺陷与异常 · 对良率的影响</summary><div class="in"><ul>'+defects+'</ul></div></details>'
+    +'<details class="lsec"><summary>📏 工程师如何量测 / 判定合格</summary><div class="in"><p>'+m.metro+'</p></div></details>'
+    +'<div class="tipbox">💡 <b>易混点 / 记忆口诀：</b>'+m.tip+'</div>'
+    +'<details class="lsec"><summary>🧩 在不同产品里的侧重点</summary><div class="in"><p>'+m.prod+'</p></div></details>'
+    +'<details class="lsec"><summary>🔗 和前后工艺的关系</summary><div class="in"><p>'+m.rel+'</p></div></details>'
+    +'<div class="q" style="margin-top:12px"><div class="qt">想一想：'+m.quiz.q+'</div><div class="opts" id="lQuizOpts"></div><div class="exp" id="lQuizExp">解析：'+m.quiz.exp+'</div></div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn" id="btnLearnDone">'+(S.learned[m.key]?"✓ 已标记学完":"✓ 标记本工艺已学完")+'</button>'
+    +(next?'<button class="btn ghost" id="btnLearnNext">下一站：'+next.nm+' →</button>':'<button class="btn ghost" id="btnLearnNext">回到列表顶部 ↑</button>')
+    +'<button class="btn ghost" id="btnLearnBack">返回工艺列表</button></div></div>';
+  $("learnDetail").innerHTML=h;
+  function paintStep(){
+    var s=m.steps[S.learnStep];
+    var parts=s.split("｜");
+    $("lStepDesc").innerHTML='<b>'+parts[0]+'</b>'+(parts[1]?'｜'+parts[1]:"");
+    var layers = S.learnStep===0 ? m.xb : (S.learnStep>=m.steps.length-1 ? m.xa : m.xb.concat(m.xa.slice(m.xb.length)));
+    $("lStepXsec").innerHTML=xsecHTML(layers);
+    document.querySelectorAll("[data-ls]").forEach(function(b){ b.classList.toggle("on", +b.getAttribute("data-ls")===S.learnStep); });
+  }
+  document.querySelectorAll("[data-ls]").forEach(function(b){ b.addEventListener("click",function(){ S.learnStep=+b.getAttribute("data-ls"); paintStep(); }); });
+  paintStep();
+  var qo=$("lQuizOpts");
+  m.quiz.opts.forEach(function(o,oi){
+    var b=document.createElement("button"); b.textContent="ABCD"[oi]+"．"+o;
+    b.addEventListener("click",function(){
+      qo.querySelectorAll("button").forEach(function(x,xi){ x.disabled=true; if(xi===m.quiz.a) x.classList.add("right"); else if(xi===oi) x.classList.add("wrong"); });
+      $("lQuizExp").classList.add("show");
+    });
+    qo.appendChild(b);
+  });
+  $("btnLearnDone").addEventListener("click",function(){
+    S.learned[m.key]=true; renderLearnList(); renderLearnDetail();
+    toast("✓ 已学完「"+m.nm+"」· 进度 "+LEARN.filter(function(x){return S.learned[x.key];}).length+"/"+LEARN.length+(next?" · 推荐下一站："+next.nm:""));
+  });
+  $("btnLearnNext").addEventListener("click",function(){ if(next) openLearn(next.key); else window.scrollTo({top:0,behavior:"smooth"}); });
+  $("btnLearnBack").addEventListener("click",function(){ $("learnDetail").innerHTML=""; S.learnOpen=null; window.scrollTo({top:0,behavior:"smooth"}); });
+}
+renderLearnList();
+
+/* station -> learn module map for run view */
+var ST2LEARN={start:"clean",clean:"clean",ox:"ox",litho:"litho",etch:"etch",implant:"implant",dep:"dep",cmp:"cmp",litho2:"metal",met:"wtest",pack:"pkg",done:"ftest"};
+function renderStationLearn(stKey){
+  var m=learnByKey(ST2LEARN[stKey]); var box=$("stLearn");
+  if(!m){ box.classList.add("hidden"); return; }
+  box.classList.remove("hidden");
+  box.innerHTML='<b>📚 本站速学卡 · '+m.nm+'</b><div style="margin-top:4px"><b>目的：</b>'+m.purpose+'</div>'
+    +'<div style="margin-top:4px"><b>关键参数：</b>'+m.params.slice(0,3).map(function(p){return p[0];}).join("、")+'</div>'
+    +'<ul>'+m.defects.slice(0,2).map(function(d){return '<li><b>'+d[0]+'</b>：'+d[1]+'</li>';}).join("")+'</ul>'
+    +'<div class="xcompare"><div class="xcol"><div class="cap">处理前</div>'+xsecHTML(m.xb)+'</div><div class="xcol"><div class="cap">处理后</div>'+xsecHTML(m.xa)+'</div></div>'
+    +'<button class="btn ghost" style="margin-top:10px" onclick="openLearn(\''+m.key+'\')">展开完整学习：'+m.nm+' →</button>';
+}
+
+/* ================= tour ================= */
+TOUR.forEach(function(t){
+  var d=document.createElement("div"); d.className="tourcard";
+  d.innerHTML=t.svg+'<div class="body"><h3>'+t.nm+'</h3><p class="sub">'+t.ds+'</p></div>';
+  $("tourGrid").appendChild(d);
+});
+
+/* ================= quiz ================= */
+var quizAns={};
+QUIZ.forEach(function(item,qi){
+  var d=document.createElement("div"); d.className="q";
+  d.innerHTML='<div class="qt">'+(qi+1)+". "+item.q+'</div>';
+  var opts=document.createElement("div"); opts.className="opts";
+  item.opts.forEach(function(o,oi){
+    var b=document.createElement("button"); b.textContent="ABCD"[oi]+"．"+o;
+    b.addEventListener("click",function(){
+      quizAns[qi]=oi;
+      opts.querySelectorAll("button").forEach(function(x,xi){
+        x.disabled=true;
+        if(xi===item.a) x.classList.add("right");
+        else if(xi===oi) x.classList.add("wrong");
+      });
+      d.querySelector(".exp").classList.add("show");
+      if(Object.keys(quizAns).length===QUIZ.length) $("btnQuizDone").disabled=false;
+    });
+    opts.appendChild(b);
+  });
+  d.appendChild(opts);
+  var e=document.createElement("div"); e.className="exp"; e.textContent="解析："+item.exp; d.appendChild(e);
+  $("quizBox").appendChild(d);
+});
+$("btnQuizDone").addEventListener("click",function(){
+  var correct=0; QUIZ.forEach(function(item,qi){ if(quizAns[qi]===item.a) correct++; });
+  S.quizScore=Math.round(correct/QUIZ.length*100);
+  computeResult(); $("resultCard").scrollIntoView({behavior:"smooth"});
+});
+function computeResult(){
+  var run=S.score, quiz=(S.quizScore===null?0:S.quizScore), bn=S.bnScore;
+  var total=Math.round(run*0.55 + quiz*0.35 + bn*0.5);
+  if(!S.finished && S.quizScore===null) return;
+  $("resultCard").classList.remove("hidden");
+  $("resRun").textContent=S.finished?run:"—";
+  $("resQuiz").textContent=S.quizScore===null?"—":quiz;
+  $("resBn").textContent=bn+" / 20";
+  $("resTotal").textContent=(S.finished&&S.quizScore!==null)?total:"—";
+  var c=$("resComment");
+  if(S.finished&&S.quizScore!==null){
+    c.textContent = total>=90?"🏆 整合之星：每一站都守住了，这批片稳得像量测过的。" : total>=80?"🎉 优秀！判断稳、底线明，彩蛋已解锁——那个红色按钮在等你。" : total>=60?"👍 合格。错的那几通电话，回去看看解析，下次别再赌。" : "📚 还得练：记住三件事——超标先 Hold、流程不能跳、规格内讲数据。";
+    if(total>=80){ $("eggZone").classList.remove("hidden"); $("eggLocked").classList.add("hidden"); }
+  } else {
+    c.textContent = S.finished? "运行部分完成，去把 8 道测验题答完就能看总分。" : "先去跑完一个批次、答完测验，这里才会出总分。";
+  }
+}
+
+/* ================= boom egg ================= */
+(function buildParticles(){
+  var st=$("boomStage"); var colors=["#ffb03a","#ff7847","#ffd94d","#ff5a3c","#fff3b0"];
+  for(var i=0;i<46;i++){
+    var p=document.createElement("div"); p.className="p";
+    var s=6+Math.random()*16; p.style.width=s+"px"; p.style.height=s+"px";
+    p.style.left="50%"; p.style.top="62%"; p.style.background=colors[i%colors.length];
+    p.style.setProperty("--dx",(Math.random()*440-220)+"px"); p.style.setProperty("--dy",(Math.random()*-230-20)+"px");
+    p.style.animationDelay=(Math.random()*0.25)+"s";
+    st.appendChild(p);
+  }
+})();
+$("btnBoom").addEventListener("click",function(){
+  var st=$("boomStage"); st.classList.remove("go"); void st.offsetWidth; st.classList.add("go");
+  if(navigator.vibrate) navigator.vibrate([200,50,300]);
+  $("boomTxt").innerHTML="💥 轰——（动画效果，厂房表示情绪稳定）<br>📞 厂长来电：「谁干的？……哦，是模拟器啊。那没事了。」<br><b>现实里别试：守住每一站，才是真本事。</b>";
+  this.disabled=true; this.textContent="已炸过 · 厂房正在倒带重建中…";
+});
+
+/* ================= misc ================= */
+function resetGame(){
+  S.product=null; S.stepIdx=-1; S.finished=false; S.score=80; S.quizScore=null; quizAns={};
+  $("scoreChip").textContent=80;
+  document.querySelectorAll(".q .opts button").forEach(function(b){ b.disabled=false; b.classList.remove("right","wrong"); });
+  document.querySelectorAll(".q .exp").forEach(function(e){ e.classList.remove("show"); });
+  $("btnQuizDone").disabled=true; $("resultCard").classList.add("hidden");
+  $("runMain").classList.add("hidden"); $("runEmpty").classList.remove("hidden");
+  renderProducts(currentFilter); $("pickDetail").innerHTML="";
+  go("overview"); toast("新的一局：重新选产品吧");
+}
+renderProducts("all");
+</script>
+</body>
+</html>
